@@ -305,7 +305,7 @@ function show(id, el){
         load();
     }
     if(id === 'history'){
-    loadHistory();   // 🔥 THIS IS MISSING
+    loadHistory();   
     }
     if(id === 'performance'){
     loadPerformance();
@@ -369,7 +369,7 @@ async function loadPerformance() {
         let res = await fetch("/admin/api/performance");
         let data = await res.json();
 
-        console.log(data); // 👈 debug (optional)
+        console.log(data); 
 
         let table = document.getElementById("perf");
 
