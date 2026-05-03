@@ -2,57 +2,278 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Student Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style1.css') }}">
+    <title>Professional Assessment Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="{{ url_for('static',filename='style1.css') }}">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+    <style>
+        /* ================== ROOT VARIABLES ================== */
+        :root {
+            --primary: #2563eb;
+            --sidebar-bg: #0f172a;
+            --body-bg: #f1f5f9;
+            --border-color: #e2e8f0;
+            --text-main: #1e293b;
+        }
+
+        /* ================== RESET ================== */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body { background-color: var(--body-bg); display: flex; min-height: 100vh; }
+
+        /* ================== SIDEBAR ================== */
+        .sidebar {
+            width: 260px;
+            background: var(--sidebar-bg);
+            height: 100vh;
+            position: fixed;
+            padding: 30px 20px;
+            overflow-y: auto; /* Scroll if too long */
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 50px;
+        }
+
+        .logo-img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+        }
+
+        .nav-menu { list-style: none; padding: 0; }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: 0.3s;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255,255,255,0.08);
+        }
+
+        /* ================== MAIN CONTENT ================== */
+        .main-content {
+            margin-left: 260px;
+            width: calc(100% - 260px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: white;
+            padding: 0 40px;
+            height: 80px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .profile-pic {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+        }
+
+        .profile-text { font-weight: 600; font-size: 0.9rem; }
+
+        .v-divider {
+            width: 1px;
+            height: 25px;
+            background: var(--border-color);
+        }
+
+        .logout-btn {
+            border: none;
+            background: #fff1f2;
+            color: #e11d48;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        /* ================== DASHBOARD CARDS ================== */
+        .dashboard-container {
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, max-content));
+            gap: 30px;
+            justify-content: center; /* Centers cards in grid */
+        }
+
+        .assessment-card {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: 0.3s;
+        }
+
+        .assessment-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            border-color: var(--primary);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            color: #94a3b8;
+        }
+
+        .tag {
+            background: #eff6ff;
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 6px;
+        }
+
+        .assessment-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: var(--text-main);
+        }
+
+        .assessment-card p {
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .btn-primary {
+            text-decoration: none;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        .btn-primary:hover { background: #1e40af; }
+
+    </style>
 </head>
+
 <body>
 
-<div class="dashboard-container">
-
-    <!-- HEADER -->
-    <div class="dashboard-header">
-        <h1>Student Dashboard</h1>
-        <a class="logout-btn" href="{{ url_for('logout') }}">Logout</a>
-    </div>
-
-    <!-- PROFILE CARD -->
-    <div class="profile-card">
-
-        <!-- LEFT : PHOTO -->
-        <div class="profile-photo">
-            <img src="{{ url_for('static', filename='uploads/photos/' + user.photo) }}" alt="Student Photo">
+    <!-- ================== SIDEBAR ================== -->
+    <nav class="sidebar">
+        <div class="logo-section">
+            <img src="{{ url_for('static', filename='img2.png') }}" alt="Logo" class="logo-img">
         </div>
 
-        <!-- RIGHT : DETAILS -->
-        <div class="profile-details">
-            <h2>{{ user.name }}</h2>
-            <p class="email">{{ user.email }}</p>
+        <ul class="nav-menu">
+            <li>
+                <a href="{{ url_for('dashboard') }}" class="nav-item active">
+                    <i class='bx bxs-dashboard'></i>
+                    <span>Home</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('galary') }}" class="nav-item">
+                    <i class='bx bx-edit-alt'></i>
+                    <span>Your Achievements</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('performance') }}" class="nav-item">
+                    <i class='bx bx-check-shield'></i>
+                    <span>View Performance</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
 
-            <div class="info-grid">
-                <div>
-                    <span>Course</span>
-                    <p>{{ user.course }}</p>
+    <!-- ================== MAIN CONTENT ================== -->
+    <main class="main-content">
+        <header class="top-header">
+            <h1>Assessment Overview</h1>
+
+            <div class="header-right">
+                <div class="user-pill">
+                    <img src="{{ url_for('static', filename='img4.jpg') }}" alt="User" class="profile-pic">
+                    <a href="{{ url_for('profile') }}" style="text-decoration: none;">
+                        <span class="profile-text">Profile</span>
+                    </a>
                 </div>
-                <div>
-                    <span>School</span>
-                    <p>{{ user.school }}</p>
-                </div>
-                <div>
-                    <span>Semester</span>
-                    <p>{{ user.semester }}</p>
-                </div>
+                
+
+                <div class="v-divider"></div>
+                <a href="{{ url_for('logout') }}" class="logout-btn">
+                    <i class='bx bx-log-out'></i>
+                    <span>Logout</span>
+                </a>
             </div>
+        </header>
 
-            <form action="{{ url_for('continue_page') }}" method="get">
-                <button class="continue-btn" type="submit">
-                    Continue to Assessment
-                </button>
-            </form>
+        <div class="dashboard-container">
+           <div class="card-grid">
+            {% for a in assessments %}
+            <div class="assessment-card">
+        <div class="card-header">
+            <span class="tag">{{ a.subject }}</span>
         </div>
-
+        <h3>{{ a.subject }} Assessment</h3>
+        <p>Total Questions: {{ a.total }} | Duration: {{ a.duration }} min</p>
+        <div class="card-footer">
+            <!-- Link to start the assessment -->
+            <a href="{{ url_for('assessment', assessment_id=a.id) }}" class="btn-primary">Take Assessment</a>
+        </div>
     </div>
-
+    {% endfor %}
 </div>
+
+            </div>
+        </div>
+    </main>
 
 </body>
 </html>

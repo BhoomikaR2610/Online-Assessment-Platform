@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style3.css') }}">
+</head>
+<body>
+
+<div class="login-card">
+
+    <!-- LEFT SIDE -->
+    <div class="card-left">
+        <img src="{{ url_for('static', filename='img1.avif') }}" alt="Illustration" class="hero-image">
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="card-right">
+        <div class="form-wrapper">
+
+            <!-- LOGO -->
+            <img src="{{ url_for('static', filename='img2.png') }}" class="overlay-logo">
+
+            <!-- TITLE -->
+            <h2>Admin Login</h2>
+
+            <!-- FORM -->
+            <form method="POST">
+                <input type="text" name="username" placeholder="Enter admin username" required>
+                <input type="password" name="password" placeholder="Enter password" required>
+                <button type="submit">Login</button>
+            </form>
+
+            <!-- OPTIONAL TEXT -->
+            <p class="footer-text">
+                Secure Admin Access Only
+            </p>
+
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

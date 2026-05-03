@@ -1,0 +1,32 @@
+<html>
+<head>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style3.css') }}">
+
+</head>
+<form method="POST">
+    <div class="login-card">
+
+    <!-- LEFT SIDE - GRADIENT IMAGE/ART -->
+    <div class="card-left">
+        <img src="{{ url_for('static', filename='img1.avif') }}" alt="Illustration" class="hero-image">
+    </div>
+
+    <!-- RIGHT SIDE - FORM -->
+    <div class="card-right">
+        <div class="form-wrapper">
+
+            
+            <!-- LOGO LEFT ALIGNED -->
+            <img src="{{ url_for('static', filename='img2.png') }}" alt="Logo" class="overlay-logo">
+
+    <h2>Forgot Password</h2>
+    <input type="email" name="email" placeholder="Enter your email" required>
+    <button type="submit">Send Reset Link</button>
+    </div>
+       </div>
+          </div>
+</form>
+{% for msg in get_flashed_messages() %}
+<div>{{ msg }}</div>
+{% endfor %}
+</html>

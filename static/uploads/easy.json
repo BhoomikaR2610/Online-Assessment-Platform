@@ -1,0 +1,52 @@
+[
+  {
+    "question": "What does DBMS stand for?",
+    "options": ["Database Management System", "Data Backup System", "Digital Base Management", "None"],
+    "answer": "Database Management System"
+  },
+  {
+    "question": "Which of the following is a database?",
+    "options": ["MySQL", "HTML", "CSS", "Python"],
+    "answer": "MySQL"
+  },
+  {
+    "question": "What is a table in DBMS?",
+    "options": ["Collection of rows and columns", "A programming language", "A software", "None"],
+    "answer": "Collection of rows and columns"
+  },
+  {
+    "question": "Primary key is used to?",
+    "options": ["Uniquely identify records", "Delete records", "Update records", "None"],
+    "answer": "Uniquely identify records"
+  },
+  {
+    "question": "Which command is used to retrieve data?",
+    "options": ["SELECT", "INSERT", "DELETE", "UPDATE"],
+    "answer": "SELECT"
+  },
+  {
+    "question": "Which language is used in DBMS?",
+    "options": ["SQL", "HTML", "CSS", "Java"],
+    "answer": "SQL"
+  },
+  {
+    "question": "What is a row in DBMS?",
+    "options": ["Record", "Column", "Table", "Database"],
+    "answer": "Record"
+  },
+  {
+    "question": "Which of the following is not DBMS?",
+    "options": ["Excel", "MySQL", "Oracle", "PostgreSQL"],
+    "answer": "Excel"
+  },
+  {
+    "question": "Full form of SQL?",
+    "options": ["Structured Query Language", "Simple Query Language", "Standard Question Language", "None"],
+    "answer": "Structured Query Language"
+  },
+  {
+    "question": "Which key allows duplicate values?",
+    "options": ["Foreign Key", "Primary Key", "Unique Key", "None"],
+    "answer": "Foreign Key"
+  }
+]

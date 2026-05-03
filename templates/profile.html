@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Student Profile | MSDC Portal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+}
+
+/* ================= HEADER (COMPACT & PROFESSIONAL) ================= */
+
+.main-header {
+    background: #ffffff;
+    padding: 8px 50px;   /* Compact height */
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Logo perfectly balanced */
+.logo-img {
+    width: 115px;   /* Smaller for compact header */
+    height: auto;
+    display: block;
+}
+
+.header-badges {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.status-badge {
+    background: #ecfdf5;
+    color: #047857;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.logout-btn {
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 14px;
+    color: #dc2626;
+    transition: 0.2s ease;
+}
+
+.logout-btn:hover {
+    opacity: 0.7;
+}
+
+/* ================= MAIN LAYOUT ================= */
+
+.profile-layout {
+    display: flex;
+    gap: 40px;
+    padding: 40px 50px;
+}
+
+/* ================= PROFILE CARD ================= */
+
+.profile-card {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 14px;
+    width: 280px;
+    text-align: center;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+}
+
+.photo-container img {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #f1f5f9;
+}
+
+.id-details h2 {
+    margin-top: 15px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.id-number {
+    margin-top: 5px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* ================= DETAILS SECTION ================= */
+
+.details-section {
+    flex: 1;
+}
+
+.data-card {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 14px;
+    margin-bottom: 25px;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+}
+
+.section-title {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    border-left: 4px solid #2563eb;
+    padding-left: 10px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.info-box label {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.data-value {
+    margin-top: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #0f172a;
+}
+
+.highlight {
+    color: #2563eb;
+    font-weight: 600;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 900px) {
+    .profile-layout {
+        flex-direction: column;
+    }
+
+    .profile-card {
+        width: 100%;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<header class="main-header">
+    <div class="header-content">
+
+        <!-- Logo -->
+        <img src="{{ url_for('static', filename='img2.png') }}" 
+             alt="MSDC Logo" 
+             class="logo-img">
+
+        <div class="header-badges">
+            <span class="status-badge">Active Account</span>
+            <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+        </div>
+
+    </div>
+</header>
+
+<main class="profile-layout">
+
+    <aside class="profile-card">
+
+        <div class="photo-container">
+            <img src="{{ url_for('static', filename='uploads/photos/' + user['photo']) }}" 
+                 alt="Student Photo">
+        </div>
+
+        <div class="id-details">
+            <h2>{{ user['name'] }}</h2>
+            <p class="id-number">Roll No: {{ user['roll_no'] }}</p>
+        </div>
+
+    </aside>
+
+    <section class="details-section">
+
+        <div class="data-card">
+            <div class="section-title">Personal Information</div>
+
+            <div class="info-grid">
+                <div class="info-box">
+                    <label>Full Name</label>
+                    <div class="data-value">{{ user['name'] }}</div>
+                </div>
+
+                <div class="info-box">
+                    <label>Email Address</label>
+                    <div class="data-value">{{ user['email'] }}</div>
+                </div>
+
+                <div class="info-box">
+                    <label>School</label>
+                    <div class="data-value">{{ user['school'] }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="data-card">
+            <div class="section-title">Academic Record</div>
+
+            <div class="info-grid">
+                <div class="info-box">
+                    <label>Course</label>
+                    <div class="data-value">{{ user['course'] }}</div>
+                </div>
+
+                <div class="info-box">
+                    <label>Semester</label>
+                    <div class="data-value">{{ user['semester'] }}</div>
+                </div>
+
+                <div class="info-box">
+                    <label>Assessment Status</label>
+                    <div class="data-value highlight">
+                        {{ user['assessment_status'] }}
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <label>Score</label>
+                    <div class="data-value">
+                        {{ user['score'] }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+</main>
+
+</body>
+</html>

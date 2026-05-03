@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Performance Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #f4f6fb;
+}
+
+/* HEADER */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    background: white;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo img {
+    height: 8%;
+    width: 8%;
+}
+
+.logo-text .title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #4f46e5;
+}
+
+/* BACK BUTTON */
+.back-btn {
+    background: linear-gradient(135deg, #4f46e5, #9333ea);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* CARD */
+.container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+}
+
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+.subtitle {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.empty {
+    text-align: center;
+    color: gray;
+    margin-top: 30px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="header">
+    <div class="logo">
+        <img src="{{ url_for('static', filename='img2.png') }}">
+        <div class="logo-text">
+            <div class="title">Performance Dashboard</div>
+        </div>
+    </div>
+
+    <button class="back-btn" onclick="goBack()">⬅ Back</button>
+</div>
+
+<!-- MAIN -->
+<div class="container">
+    <div class="card">
+        <h2>Performance Overview</h2>
+        <div class="subtitle">Scores shown in percentage (%)</div>
+
+        <canvas id="performanceChart"></canvas>
+        <div id="emptyMsg" class="empty"></div>
+    </div>
+</div>
+
+<!-- 🏆 LEADERBOARD -->
+<div class="container">
+    <div class="card">
+        <h2>🏆 Leaderboard</h2>
+
+        <select id="testSelect" style="padding:10px; margin-bottom:15px;" onchange="changeTest()"></select>
+
+        <table border="1" width="100%" style="text-align:center;">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Name</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+
+// 🔙 Back button
+function goBack() {
+    window.history.back();
+}
+
+// 🚀 Load performance + dropdown
+async function loadPerformance() {
+    try {
+        let res = await fetch("/api/performance");
+        let data = await res.json();
+
+        if (!data.labels || data.labels.length === 0) {
+            document.getElementById("performanceChart").style.display = "none";
+            document.getElementById("emptyMsg").innerText =
+                "No assessments attempted yet.";
+            return;
+        }
+
+        // 🎯 CHART
+        const ctx = document.getElementById("performanceChart").getContext("2d");
+
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, "#4f46e5");
+        gradient.addColorStop(1, "#22c55e");
+
+        new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: "Score (%)",
+                    data: data.percentages,
+                    backgroundColor: gradient,
+                    borderRadius: 10,
+                    barThickness: 25,        // 🔥 reduce thickness
+                    maxBarThickness: 30  
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        });
+
+        // 🎯 DROPDOWN
+        let select = document.getElementById("testSelect");
+        select.innerHTML = "";
+
+        data.labels.forEach((label, index) => {
+            let option = document.createElement("option");
+            option.value = data.assessment_ids[index];
+            option.text = label;
+            select.appendChild(option);
+        });
+
+        // 🔥 LOAD FIRST LEADERBOARD
+        if (data.assessment_ids.length > 0) {
+            loadLeaderboard(data.assessment_ids[0]);
+        }
+
+    } catch (err) {
+        console.error(err);
+        alert("Error loading performance data");
+    }
+}
+
+// 🏆 Load leaderboard ONLY (correct way)
+async function loadLeaderboard(assessmentId) {
+    try {
+        let res = await fetch("/api/leaderboard/" + assessmentId);
+        let data = await res.json();
+
+        let tbody = document.getElementById("leaderboardBody");
+        tbody.innerHTML = "";
+
+        data.forEach(row => {
+            let tr = `
+                <tr>
+                    <td>${row.rank}</td>
+                    <td>${row.name}</td>
+                    <td>${row.score}</td>
+                </tr>
+            `;
+            tbody.innerHTML += tr;
+        });
+
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+// 🔥 CHANGE EVENT (when user selects test)
+function changeTest() {
+    let id = document.getElementById("testSelect").value;
+    loadLeaderboard(id);
+}
+
+// 🚀 INIT
+loadPerformance();
+
+</script>
+
+</body>
+</html>

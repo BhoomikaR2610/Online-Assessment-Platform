@@ -1,0 +1,52 @@
+[
+  {
+    "question": "Which normal form removes transitive dependency?",
+    "options": ["1NF", "2NF", "3NF", "BCNF"],
+    "answer": "3NF"
+  },
+  {
+    "question": "What is BCNF?",
+    "options": ["Advanced normal form", "Basic normal form", "Binary form", "None"],
+    "answer": "Advanced normal form"
+  },
+  {
+    "question": "Which SQL command is DDL?",
+    "options": ["CREATE", "SELECT", "INSERT", "UPDATE"],
+    "answer": "CREATE"
+  },
+  {
+    "question": "Which index improves search speed?",
+    "options": ["B-Tree", "Array", "Stack", "Queue"],
+    "answer": "B-Tree"
+  },
+  {
+    "question": "Which isolation level avoids dirty reads?",
+    "options": ["READ COMMITTED", "READ UNCOMMITTED", "SERIALIZABLE", "NONE"],
+    "answer": "READ COMMITTED"
+  },
+  {
+    "question": "Which join returns all records?",
+    "options": ["FULL JOIN", "INNER JOIN", "LEFT JOIN", "RIGHT JOIN"],
+    "answer": "FULL JOIN"
+  },
+  {
+    "question": "Which command updates data?",
+    "options": ["UPDATE", "INSERT", "DELETE", "DROP"],
+    "answer": "UPDATE"
+  },
+  {
+    "question": "Which SQL keyword groups rows?",
+    "options": ["GROUP BY", "ORDER BY", "WHERE", "HAVING"],
+    "answer": "GROUP BY"
+  },
+  {
+    "question": "What is transaction?",
+    "options": ["Unit of work", "Table", "Query", "None"],
+    "answer": "Unit of work"
+  },
+  {
+    "question": "Which property ensures durability?",
+    "options": ["ACID", "BASE", "CAP", "None"],
+    "answer": "ACID"
+  }
+]

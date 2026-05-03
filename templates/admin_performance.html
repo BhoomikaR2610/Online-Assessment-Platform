@@ -1,0 +1,173 @@
+<style>
+    
+.stat-card{
+  flex:1;
+  padding:15px;
+  background:white;
+  border-radius:12px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.1);
+  text-align:center;
+  font-size:16px;
+}
+.stat-card h3{
+  margin:5px 0 0;
+  font-size:22px;
+}
+
+</style>
+<div class="container">
+  <div class="card">
+    <h2>📊 Admin Performance Dashboard</h2>
+
+    <!-- FILTER SECTION -->
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px;">
+      
+      <select id="subjectFilter" onchange="loadTestsBySubject()"></select>
+      
+      <select id="testFilter"></select>
+
+      <input type="date" id="dateFilter">
+
+      <select id="scoreFilter">
+  <option value="">All Students</option>
+  <option value="top">Top Performers (>=80%)</option>
+  <option value="fail">Failed (<40%)</option>
+</select>
+      <button onclick="loadAdminData()">Apply Filter</button>
+    </div>
+
+    <!-- STATS -->
+    <div style="display:flex; gap:20px; margin-bottom:15px;">
+      <h4 id="totalCount">Total: 0</h4>
+      <h4 id="topCount">Top: 0</h4>
+      <h4 id="failCount">Failed: 0</h4>
+    </div>
+
+    <!-- TABLE -->
+    <table border="1" width="100%" style="text-align:center;">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Score</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="adminTable"></tbody>
+    </table>
+    <div class="card" style="margin-top:20px;">
+  <h3>🏆 Top Students</h3>
+  <div id="topStudents"></div>
+</div>
+
+<div class="card" style="margin-top:20px;">
+  <h3>❌ Failed Students</h3>
+  <div id="failedStudents"></div>
+</div>
+  </div>
+</div>
+<script>
+    // Load subjects + tests
+async function loadFilters() {
+  let res = await fetch("/admin/api/filters");
+  let data = await res.json();
+
+  let subjectSelect = document.getElementById("subjectFilter");
+  subjectSelect.innerHTML = "<option value=''>All Subjects</option>";
+
+  data.subjects.forEach(sub => {
+    subjectSelect.innerHTML += `<option value="${sub}">${sub}</option>`;
+  });
+
+  window.allTests = data.tests; // store for filtering
+  populateTests(data.tests);
+}
+
+// Subject → filter tests dynamically
+function loadTestsBySubject() {
+  let subject = document.getElementById("subjectFilter").value;
+
+  let filtered = subject
+    ? window.allTests.filter(t => t.subject === subject)
+    : window.allTests;
+
+  populateTests(filtered);
+}
+
+function populateTests(tests) {
+  let testSelect = document.getElementById("testFilter");
+  testSelect.innerHTML = "<option value=''>All Tests</option>";
+
+  tests.forEach(t => {
+    testSelect.innerHTML += `<option value="${t.id}">
+      ${t.subject} - ${t.date || 'No Date'}
+    </option>`;
+  });
+}
+
+
+  async function loadAdminData() {
+
+  let subject = document.getElementById("subjectFilter").value;
+  let test = document.getElementById("testFilter").value;
+  let scoreFilter = document.getElementById("scoreFilter").value;
+
+  let url = `/admin/api/performance?subject=${subject || ""}&assessment_id=${test || ""}&score_filter=${scoreFilter || ""}`;
+
+  let res = await fetch(url);
+  let data = await res.json();
+
+  let tbody = document.getElementById("adminTable");
+  tbody.innerHTML = "";
+
+  let top = 0;
+  let fail = 0;
+  let displayed = 0;
+
+  let topHTML = "";
+  let failHTML = "";
+
+  data.forEach(row => {
+
+    let status = "";
+    let color = "";
+
+    if (row.score >= 80) {
+      status = "🏆 Top";
+      color = "green";
+      top++;
+      topHTML += `<p>🏆 ${row.name} - ${row.score}</p>`;
+    } 
+    else if (row.score < 40) {
+      status = "❌ Fail";
+      color = "red";
+      fail++;
+      failHTML += `<p>❌ ${row.name} - ${row.score}</p>`;
+    } 
+    else {
+      status = "✔ Average";
+      color = "orange";
+    }
+
+    displayed++;
+
+    tbody.innerHTML += `
+      <tr>
+        <td>${row.name}</td>
+        <td>${row.email}</td>
+        <td style="color:${color}; font-weight:bold;">${row.score}</td>
+        <td>${status}</td>
+      </tr>
+    `;
+  });
+
+  // STATS
+  document.getElementById("totalCount").innerText = "Total Attended: " + displayed;
+  document.getElementById("topCount").innerText = "Top: " + top;
+  document.getElementById("failCount").innerText = "Failed: " + fail;
+
+  // OPTIONAL EXTRA SECTIONS
+  document.getElementById("topStudents").innerHTML = topHTML;
+  document.getElementById("failedStudents").innerHTML = failHTML;
+}
+</script>

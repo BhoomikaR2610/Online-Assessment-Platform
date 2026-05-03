@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Identity Verification </title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'> 
+   <!-- <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"> -->
+    <link rel="stylesheet" href="{{ url_for('static',filename='varification.css') }}">
+</head>
+<body>
+
+    <div class="page-container">
+        <div class="split-card">
+            
+            <aside class="info-panel">
+               
+               
+                   <div class="brand">
+                     <img src="{{ url_for('static', filename='img2.png') }}" 
+                 alt="Logo"  class="brand-logo">
+                 
+                </div>
+                
+
+                <div class="content-body">
+                    <h1 class="heading">Verification</h1>
+                    <p class="subheading">Review and confirm your credentials to finalize your certificate issuance.</p>
+
+                    <div class="stepper">
+                        <div class="step completed">
+                            <div class="circle">1</div>
+                            <div class="step-text">Assessment Finished</div>
+                        </div>
+                        <div class="step active">
+                            <div class="circle">2</div>
+                            <div class="step-text">Identity Verification</div>
+                        </div>
+                        <div class="step">
+                            <div class="circle">3</div>
+                            <div class="step-text">Generate Certificate</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="footer-note">
+                    
+                </div>
+            </aside>
+
+            <main class="form-panel">
+                <form id="secureForm">
+                    <div class="field-grid">
+                        <div class="input-wrap">
+                            <label>Full Legal Name</label>
+                            <input type="text" placeholder="As seen on your ID" required>
+                        </div>
+
+                        <div class="input-wrap">
+                            <label>Registration Number</label>
+                            <input type="text" placeholder="Enter Registration Number" class="mono" required>
+                        </div>
+
+                        <div class="input-wrap">
+                            <label>Professional Email</label>
+                            <input type="email" placeholder="Example@google.com" required>
+                        </div>
+
+                        <div class="input-wrap">
+                            <label>Phone Number</label>
+                            <input type="tel" placeholder="+91 9999999999" required>
+                        </div>
+                    </div>
+
+                    <div class="notice">
+                        By clicking verify, you confirm that the data provided matches your official records.
+                    </div>
+
+                    <div class="action-area">
+                        <button type="button" class="btn-ghost" onclick="history.back()">Cancel</button>
+                        <button type="submit" class="btn-primary">Verify</button>
+                    </div>
+                </form>
+            </main>
+
+        </div>
+    </div>
+
+</body>
+</html>

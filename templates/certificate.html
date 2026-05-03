@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Certificate</title>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #e3ecff, #f9fbff);
+        }
+
+        .certificate {
+            width: 950px;
+            height: 620px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 15px;
+            padding: 50px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            border: 8px solid #1e3c72;
+        }
+
+        /* LOGO */
+        .logo {
+            position: absolute;
+            top: 25px;
+            left: 40px;
+        }
+
+        .logo img {
+            width: 100px;
+        }
+
+        /* TITLE */
+        h1 {
+            font-size: 42px;
+            color: #1e3c72;
+            margin-top: 20px;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #666;
+        }
+
+        /* NAME */
+        .name {
+            font-size: 36px;
+            font-weight: 700;
+            margin: 30px 0;
+            color: #000;
+            border-bottom: 2px dashed #ccc;
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+
+        .content {
+            font-size: 18px;
+            color: #444;
+            margin: 20px 0;
+        }
+
+        /* SCORE BADGE */
+        .score-box {
+            display: inline-block;
+            padding: 15px 25px;
+            margin-top: 20px;
+            background: linear-gradient(135deg, #28a745, #5ddc7a);
+            color: white;
+            font-size: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        /* FOOTER */
+        .footer {
+            position: absolute;
+            bottom: 50px;
+            left: 60px;
+            right: 60px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .sign {
+            text-align: center;
+        }
+
+        .sign hr {
+            width: 180px;
+            border: 1px solid #333;
+        }
+
+        .date {
+            margin-top: 25px;
+            font-size: 14px;
+            color: #777;
+        }
+
+        /* WATERMARK */
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 120px;
+            color: rgba(30,60,114,0.05);
+            font-weight: bold;
+            pointer-events: none;
+        }
+
+        /* PRINT BUTTON */
+        .print-btn {
+            margin-top: 20px;
+            padding: 12px 25px;
+            background: #1e3c72;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .print-btn:hover {
+            background: #16305a;
+        }
+
+        /* PRINT MODE */
+        @media print {
+            .print-btn {
+                display: none;
+            }
+            body {
+                background: white;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="certificate">
+
+    <!-- LOGO IMAGE -->
+    <div class="logo">
+        <img src="{{ url_for('static', filename='img2.png') }}" alt="MSDC Logo">
+    </div>
+
+    <!-- WATERMARK -->
+    <div class="watermark">MSDC</div>
+
+    <h1>Certificate of Achievement</h1>
+
+    <p class="subtitle">This is proudly presented to</p>
+
+    <div class="name">{{ name }}</div>
+
+    <p class="content">
+        for successfully completing the assessment in  
+        <strong>{{ course }}</strong>
+    </p>
+
+    <div class="score-box">
+        Score: {{ score }} / {{ total }} ({{ percentage }}%)
+    </div>
+
+    <div class="footer">
+        <div class="sign">
+            <hr>
+            <p>Authorized Signature</p>
+        </div>
+
+        <div class="sign">
+            <hr>
+            <p>Director</p>
+        </div>
+    </div>
+
+    <div class="date">
+    Date: {{ date }}
+</div>
+
+</div>
+
+<div style="text-align:center;">
+    <button class="print-btn" onclick="window.print()">Download / Print</button>
+</div>
+
+</body>
+</html>

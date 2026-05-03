@@ -32,18 +32,33 @@
             color: #ff7f50;
             margin: 20px 0;
         }
-        .btn-home {
+        .btn-home, .btn-certificate {
             display: inline-block;
             margin-top: 25px;
             padding: 12px 20px;
-            background: #1e3c72;
             color: #fff;
             text-decoration: none;
             border-radius: 6px;
             font-size: 16px;
+            margin-right: 10px;
+        }
+        .btn-home {
+            background: #1e3c72;
         }
         .btn-home:hover {
             background: #16305a;
+        }
+        .btn-certificate {
+            background: #28a745;
+            cursor: pointer;
+        }
+        .btn-certificate:hover {
+            background: #1e7e34;
+        }
+        .info-note {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #555;
         }
     </style>
 </head>
@@ -56,10 +71,52 @@
             <p><strong>Total Questions:</strong> {{ total }}</p>
             <p><strong>Answered Questions:</strong> {{ answered }}</p>
             <p><strong>Unanswered Questions:</strong> {{ unanswered }}</p>
+            {% if flagged is defined %}
             <p><strong>Flagged Questions:</strong> {{ flagged }}</p>
+            {% endif %}
         </div>
 
-        <a href="{{ url_for('dashboard') }}" class="btn-home">Back to Dashboard</a>
+        <hr style="margin:30px 0;">
+
+        <h2>Question Review</h2>
+
+        {% for item in detailed_results %}
+        <div style="text-align:left; margin-bottom:20px; padding:15px; border-radius:8px; 
+             background:{% if item.is_correct %}#e6ffed{% else %}#ffe6e6{% endif %};">
+
+            <p><strong>Question:</strong> {{ item.question }}</p>
+
+            <p><strong>Your Answer:</strong> 
+                {% if item.user_answer %}
+                    {{ item.user_answer }}
+                {% else %}
+                    <span style="color:gray;">Not Answered</span>
+                {% endif %}
+            </p>
+
+            <p><strong>Correct Answer:</strong> {{ item.correct_answer }}</p>
+
+            <p>
+                {% if item.is_correct %}
+                    <span style="color:green;"><strong>✔ Correct</strong></span>
+                {% else %}
+                    <span style="color:red;"><strong>❌ Incorrect</strong></span>
+                {% endif %}
+            </p>
+        </div>
+        {% endfor %}
+
+        <p class="info-note">You have completed the assessment. You cannot attempt it again.</p>
+
+        <!-- Certificate Button (No Function Attached) -->
+        <a href="{{ url_for('certificate') }}" class="btn-certificate">
+         View Certificate
+        </a>
+
+        <a href="{{ url_for('dashboard') }}" class="btn-home">
+            Back to Dashboard
+        </a>
+
     </div>
 </body>
 </html>

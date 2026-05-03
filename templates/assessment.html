@@ -1,84 +1,379 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Assessment</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Assessment Portal | Elite Lockdown</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
     <style>
-        body { font-family: Arial; margin:0; padding:20px; }
-        .timer { font-size:20px; font-weight:bold; position:fixed; top:10px; right:10px; color:black; }
-        .question { display:none; margin-bottom:20px; }
-        .question.active { display:block; }
-        .options label { display:block; margin-bottom:8px; }
-        #manualSubmit { padding:10px 20px; background:green; color:white; border:none; cursor:pointer; }
-        .webcam { position:fixed; top:50px; right:20px; width:200px; height:150px; border:2px solid #000; border-radius:8px; }
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #eef2ff;
+            --bg: #fdfdfe;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --radius-xl: 16px;
+            --radius-lg: 12px;
+            --shadow-subtle: 0 4px 20px -2px rgba(0,0,0,0.05);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            overflow-x: hidden;
+            user-select: none; /* Prevent text copying */
+        }
+
+        /* FULLSCREEN LOCKDOWN OVERLAY */
+        #lockdownOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.98); color: white; z-index: 9999;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; backdrop-filter: blur(8px);
+        }
+
+        /* REVIEW MODAL OVERLAY */
+        #reviewOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.9); z-index: 10000;
+            display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .review-card {
+            background: white; padding: 2.5rem; border-radius: var(--radius-xl);
+            max-width: 500px; width: 90%; text-align: center; color: var(--text-main);
+        }
+
+        .header {
+            position: sticky; top: 0; display: flex; justify-content: space-between;
+            align-items: center; padding: 1rem 3rem; background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); z-index: 100;
+        }
+
+        .strike-counter {
+            background: #fff1f2; color: var(--danger); padding: 6px 14px;
+            border-radius: 40px; font-size: 0.85rem; font-weight: 700; border: 1px solid #fecaca;
+        }
+
+        .timer-container {
+            display: flex; align-items: center; gap: 16px; background: var(--surface);
+            border: 1px solid var(--border); padding: 6px 14px; border-radius: 40px;
+        }
+
+        .main-container {
+            max-width: 1400px; margin: 2rem auto; padding: 0 2rem;
+            display: grid; grid-template-columns: 1fr 340px; gap: 2rem;
+        }
+
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 2.5rem; box-shadow: var(--shadow-subtle); }
+        .progress-track { height: 8px; background: var(--primary-light); border-radius: 10px; margin-bottom: 2rem; }
+        #progress { height: 100%; background: var(--primary); border-radius: 10px; transition: 0.4s; }
+
+        .question { display: none; }
+        .q-text { font-size: 1.5rem; font-weight: 600; margin-bottom: 2rem; }
+
+        .options-grid { display: flex; flex-direction: column; gap: 0.75rem; }
+        .option {
+            display: flex; align-items: center; padding: 1.25rem; border: 2px solid var(--border);
+            border-radius: var(--radius-lg); cursor: pointer; transition: 0.2s;
+        }
+        .option:hover { border-color: var(--primary); background: var(--primary-light); }
+        .option.selected { border-color: var(--primary); background: var(--primary-light); }
+        .option input { display: none; }
+
+        .side-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 1.5rem; margin-bottom: 1.5rem; }
+        .cam-container { width: 100%; aspect-ratio: 4/3; background: #000; border-radius: var(--radius-lg); overflow: hidden; border: 2px solid var(--success); }
+        #webcam { width: 100%; height: 100%; object-fit: cover; }
+
+        .nav-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+        .nav-btn { aspect-ratio: 1; border-radius: 8px; border: 1px solid var(--border); cursor: pointer; font-weight: 600; transition: 0.2s; background: white; }
+        .nav-btn.active { border: 2px solid var(--primary); color: var(--primary); }
+        .nav-btn.answered { background: var(--primary); color: white; border: none; }
+        .nav-btn.flagged { background: var(--warning); color: white; border: none; }
+
+        .btn { padding: 0.8rem 1.5rem; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; }
+        .btn-p { background: var(--primary); color: white; }
+        .btn-s { background: #f1f5f9; color: var(--text-muted); }
+        .btn-finish { background: var(--success); color: white; }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+        .danger-pulse { animation: shake 0.3s infinite; color: var(--danger) !important; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+        .stat-box { padding: 10px; border: 1px solid var(--border); border-radius: 8px; }
+        .stat-num { display: block; font-size: 1.2rem; font-weight: 700; }
+        .stat-label { font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted); }
     </style>
 </head>
 <body>
 
-<h2>Assessment</h2>
-<div class="timer" id="timer">05:00</div>
-<video id="webcam" class="webcam" autoplay muted></video>
+<div id="lockdownOverlay">
+    <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">⚠️ LOCKDOWN ACTIVE</h1>
+    <p style="font-size: 1.2rem; margin-bottom: 2rem; opacity: 0.8;">You must stay in Fullscreen mode to complete this assessment.</p>
+    <button class="btn btn-p" onclick="enterFullscreen()" style="padding: 1rem 2.5rem;">Return to Exam</button>
+</div>
 
-<form id="quizForm" method="POST" action="{{ url_for('assessment') }}">
-    {% for q in questions %}
-    <div class="question" id="question-{{ loop.index0 }}">
-        <p><strong>{{ loop.index }}. {{ q.question }}</strong></p>
-        <div class="options">
-            {% for opt in q.options %}
-            <label><input type="radio" name="{{ q.id }}" value="{{ opt }}"> {{ opt }}</label>
-            {% endfor %}
+<div id="reviewOverlay">
+    <div class="review-card">
+        <h2>Confirm Submission</h2>
+        <p>Review your progress summary below:</p>
+        <div class="stats-grid">
+            <div class="stat-box"><span id="statAns" class="stat-num">0</span><span class="stat-label">Answered</span></div>
+            <div class="stat-box"><span id="statFlag" class="stat-num">0</span><span class="stat-label">Flagged</span></div>
+            <div class="stat-box"><span id="statRem" class="stat-num">0</span><span class="stat-label">Remaining</span></div>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+            <button class="btn btn-s" onclick="closeReview()">Back</button>
+            <button class="btn btn-finish" onclick="triggerSubmit()">Submit Final</button>
         </div>
     </div>
-    {% endfor %}
-    <button type="button" id="manualSubmit">Submit Assessment</button>
-</form>
+</div>
+
+<header class="header">
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <span style="font-weight: 800; font-size: 1.2rem; color: var(--primary);">SECURE PORTAL 2.0</span>
+        <div id="strikeBox" class="strike-counter">Strikes: 0/3</div>
+    </div>
+    <div class="timer-container">
+        <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted);">TIME REMAINING</span>
+        <div id="timer" class="timer-val">05:00</div>
+    </div>
+</header>
+
+<div class="main-container"> <!-- <input type="hidden" name="time_remaining" id="timeRemainingField" value="{{ assessment.duration * 60 }}"> --->
+    <main>
+        <div class="card">
+            <div class="progress-track"><div id="progress" style="width: 0%"></div></div>
+
+            <form id="quizForm" method="POST"  action="">
+               
+                {% for q in questions %}
+                <div class="question">
+
+                    <span style="color: var(--primary); font-weight: 700; font-size: 0.8rem; letter-spacing: 1px;">QUESTION {{ loop.index }}</span>
+                    <h2 class="q-text">{{ q.question }}</h2>
+                        <div class="options-grid">
+
+    <label class="option">
+        <input type="radio" name="{{ q.id }}" value="{{ q.option1 }}" onchange="handleSelect(this, {{ loop.index0 }})">
+        <span>{{ q.option1 }}</span>
+    </label>
+
+    <label class="option">
+        <input type="radio" name="{{ q.id }}" value="{{ q.option2 }}" onchange="handleSelect(this, {{ loop.index0 }})">
+        <span>{{ q.option2 }}</span>
+    </label>
+
+    <label class="option">
+        <input type="radio" name="{{ q.id }}" value="{{ q.option3 }}" onchange="handleSelect(this, {{ loop.index0 }})">
+        <span>{{ q.option3 }}</span>
+    </label>
+
+    <label class="option">
+        <input type="radio" name="{{ q.id }}" value="{{ q.option4 }}" onchange="handleSelect(this, {{ loop.index0 }})">
+        <span>{{ q.option4 }}</span>
+    </label>
+
+</div>
+                    <button type="button" class="btn btn-s" onclick="toggleFlag({{ loop.index0 }})" style="margin-top: 2rem;">⚐ Flag Question</button>
+                </div>
+                {% endfor %}
+
+                <input type="hidden" name="time_remaining" id="timeRemainingField" value="{{ assessment.duration * 60 }}"> 
+
+                <div style="margin-top: 4rem; display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 2rem;">
+                    <button type="button" onclick="changeQ(-1)" class="btn btn-s">← Back</button>
+                    <div style="display: flex; gap: 12px;">
+                        <button type="button" onclick="changeQ(1)" class="btn btn-p">Next →</button>
+                        <button type="button" id="submitBtn" class="btn btn-finish">Finish</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <aside>
+        <div class="side-panel">
+            <div class="cam-container"><video id="webcam" autoplay muted></video></div>
+            <div id="camStatus" style="color: var(--danger); font-size: 0.75rem; margin-top: 12px; font-weight: 700; text-align: center;"></div>
+        </div>
+        <div class="side-panel">
+            <p style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 1rem; text-transform: uppercase;">Assessment Map</p>
+            <div class="nav-grid">
+                {% for q in questions %}
+                <button type="button" class="nav-btn" onclick="goToQ({{ loop.index0 }})">{{ loop.index }}</button>
+                {% endfor %}
+            </div>
+        </div>
+    </aside>
+</div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
+    let current = 0;
+    let strikes = 0;
+    let timeLeft = {{ assessment.duration }} * 60; 
+    let noFaceTime = 0;
+    const MAX_STRIKES = 3;
     const questions = document.querySelectorAll(".question");
-    questions[0].classList.add("active");
+    const navBtns = document.querySelectorAll(".nav-btn");
+    let finishing = false;
+    let suppressBlur = false;
 
-    // Timer
-    let totalTime = 300; // 5 minutes
-    let warnedOneMinute = false;
-    const timerEl = document.getElementById("timer");
-    const timerInterval = setInterval(() => {
-        const minutes = Math.floor(totalTime/60);
-        const seconds = totalTime % 60;
-        timerEl.textContent = `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
-        if(totalTime <= 60) timerEl.style.color = "red";
-        if(totalTime <= 60 && !warnedOneMinute) { alert("1 minute remaining!"); warnedOneMinute = true; }
-        if(totalTime < 0) { clearInterval(timerInterval); submitForm(); }
-        totalTime--;
-    }, 1000);
-
-    function submitForm(){
-        const form = document.getElementById("quizForm");
-        const formData = new FormData(form);
-        fetch(form.action, { method: "POST", body: formData })
-            .then(res => { window.location.href = "{{ url_for('result') }}"; });
+    function goToQ(i) {
+        if (i < 0 || i >= questions.length) return;
+        questions.forEach(q => q.style.display = "none");
+        navBtns.forEach(b => b.classList.remove("active"));
+        questions[i].style.display = "block";
+        navBtns[i].classList.add("active");
+        document.getElementById("progress").style.width = ((i + 1) / questions.length) * 100 + "%";
+        current = i;
     }
 
-    // Manual submit
-    document.getElementById("manualSubmit").addEventListener("click", ()=>{
-        const answered = Array.from(questions).filter(q=>q.querySelector('input[type="radio"]:checked')).length;
-        const unanswered = questions.length - answered;
-        if(confirm(`Submit now?\nAnswered: ${answered}\nUnanswered: ${unanswered}`)) {
-            clearInterval(timerInterval);
-            submitForm();
+    function changeQ(dir) { goToQ(current + dir); }
+
+    function handleSelect(input, index) {
+        navBtns[index].classList.add("answered");
+        const container = input.closest('.options-grid');
+        container.querySelectorAll('.option').forEach(opt => opt.classList.remove('selected'));
+        input.parentElement.classList.add('selected');
+    }
+
+    function toggleFlag(index) {
+        navBtns[index].classList.toggle("flagged");
+    }
+
+    function enterFullscreen() {
+        const doc = document.documentElement;
+        if (doc.requestFullscreen) doc.requestFullscreen();
+        else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
+        document.getElementById('lockdownOverlay').style.display = 'none';
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+        if (finishing || suppressBlur) return;
+        if (!document.fullscreenElement) {
+            document.getElementById('lockdownOverlay').style.display = 'flex';
         }
     });
 
-    // Webcam
+    window.onblur = () => {
+        if (finishing || suppressBlur) return;
+        strikes++;
+        document.getElementById("strikeBox").innerText = `Strikes: ${strikes}/${MAX_STRIKES}`;
+        if (strikes >= MAX_STRIKES) {
+            suppressBlur = true;
+            alert("SECURITY TERMINATION: Strike limit exceeded.");
+            triggerSubmit();
+        } else {
+            suppressBlur = true;
+            alert(`⚠️ SECURITY VIOLATION: Tab switching forbidden. Strike ${strikes}/${MAX_STRIKES}`);
+            setTimeout(() => { suppressBlur = false; }, 200);
+        }
+    };
+
+    const timerInterval = setInterval(() => {
+        if (finishing) return;
+        timeLeft--;
+        document.getElementById("timeRemainingField").value = timeLeft;
+        let m = Math.floor(timeLeft / 60);
+        let s = timeLeft % 60;
+        const display = document.getElementById("timer");
+        display.innerText = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        if (timeLeft <= 60) display.classList.add("danger-pulse");
+        if (timeLeft <= 0) { clearInterval(timerInterval); triggerSubmit(); }
+    }, 1000);
+
+    function openReview() {
+        suppressBlur = true;
+        const answered = document.querySelectorAll(".nav-btn.answered").length;
+        const flagged = document.querySelectorAll(".nav-btn.flagged").length;
+        document.getElementById("statAns").innerText = answered;
+        document.getElementById("statFlag").innerText = flagged;
+        document.getElementById("statRem").innerText = questions.length - answered;
+        document.getElementById("reviewOverlay").style.display = "flex";
+    }
+
+    function closeReview() {
+        document.getElementById("reviewOverlay").style.display = "none";
+        setTimeout(() => suppressBlur = false, 200);
+    }
+
+    document.getElementById("submitBtn").onclick = openReview;
+
+    async function triggerSubmit() {
+        if (finishing) return;
+        finishing = true;
+        
+        // Resource Cleanup
+        if (window._mpCamera) await window._mpCamera.stop();
+        if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+
+        document.getElementById("quizForm").submit();
+    }
+
+    // Restriction Logic
+    document.oncontextmenu = (e) => e.preventDefault();
+    document.onkeydown = (e) => {
+        if (finishing) return;
+        if (e.ctrlKey || e.key === "F12" || e.metaKey || e.key === "PrintScreen") {
+            e.preventDefault();
+            return false;
+        }
+    };
+
+    // Face Detection
     const video = document.getElementById("webcam");
-    if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
-        navigator.mediaDevices.getUserMedia({video:true})
-            .then(stream=>video.srcObject=stream)
-            .catch(()=>alert("Unable to access webcam"));
+    const faceDetection = new FaceDetection({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${f}` });
+    faceDetection.setOptions({ model: 'short', minDetectionConfidence: 0.6 });
 
-    // Fullscreen on click
-    video.addEventListener("click", ()=>{ if(video.requestFullscreen) video.requestFullscreen(); });
-});
+   faceDetection.onResults(res => 
+   {
+        if (finishing) return;
+
+        const status = document.getElementById("camStatus");
+
+        if (!res.detections || res.detections.length === 0) {
+            noFaceTime++;
+
+            status.innerText = `⚠️ Face not visible (${noFaceTime}s)`;
+            status.style.color = "red";
+
+        // ⏳ Give more tolerance (15 seconds)
+            if (noFaceTime >= 15) {
+             suppressBlur = true;
+             alert("❌ Exam Terminated: Face not detected continuously.");
+             triggerSubmit();
+            }
+
+        } else {
+        // ✅ Face detected → reset counter
+         noFaceTime = 0;
+         status.innerText = "✅ Face detected";
+            status.style.color = "green";
+        }
+    });
+
+    const camera = new Camera(video, {
+        onFrame: async () => { if (!finishing) await faceDetection.send({ image: video }); },
+        width: 320, height: 240
+    });
+    window._mpCamera = camera;
+    camera.start();
+
+    goToQ(0);
+    document.addEventListener('click', () => { if (!document.fullscreenElement) enterFullscreen(); }, { once: true });
 </script>
-
 </body>
 </html>

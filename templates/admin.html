@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+
+    <!-- FONT AWESOME (Icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <style>
+        /* Sidebar styling improvement */
+        .sidebar ul li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .sidebar ul li:hover {
+            background: #f1f5f9;
+        }
+
+        .sidebar ul li i {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+            color: #4f46e5;
+        }
+
+        .sidebar ul li.active {
+            background: #e0e7ff;
+            font-weight: 600;
+        }
+
+        .logo img {
+            width: 40px;
+            margin-bottom: 5px;
+        }
+
+        .logo h3 {
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="dashboard">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+
+        <!-- LOGO -->
+        <div class="logo">
+            <img src="{{ url_for('static', filename='img2.png') }}">
+            <h3>Admin Panel</h3>
+        </div>
+
+        <!-- MENU -->
+        <ul>
+            <li class="active" onclick="show('create', this)">
+                <i class="fas fa-plus-circle"></i> Create
+            </li>
+
+            <li onclick="show('view', this)">
+                <i class="fas fa-folder-open"></i> Assessments
+            </li>
+
+            <li onclick="show('history', this)">
+                <i class="fas fa-clock-rotate-left"></i> History
+            </li>
+
+            <li onclick="show('performance', this)">
+                <i class="fas fa-chart-line"></i> Performance
+            </li>
+                <li onclick="logout()">
+             <i class="fas fa-sign-out-alt"></i> Logout
+            </li>
+        </ul>
+
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+            <h2 id="title">Create Assessment</h2>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="content">
+
+            <!-- CREATE -->
+            <div id="create" class="page">
+                <div class="card">
+
+                    <h3>Create Assessment</h3>
+                    <p class="subtext">Configure assessment by subject and difficulty sets</p>
+
+                    <div class="form-grid">
+                        <div>
+                            <label>Subject</label>
+                            <input id="subject" placeholder="Enter subject (e.g. DBMS)">
+                        </div>
+
+                        <div>
+                            <label>Duration (minutes)</label>
+                            <input type="number" id="duration">
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h4>Upload Question Sets</h4>
+
+                    <div class="form-grid">
+                        <div>
+                            <label>Easy Set</label>
+                            <input type="file" id="easy">
+                        </div>
+
+                        <div>
+                            <label>Medium Set</label>
+                            <input type="file" id="medium">
+                        </div>
+
+                        <div>
+                            <label>Hard Set</label>
+                            <input type="file" id="hard">
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h4>Question Distribution</h4>
+
+                    <div class="form-grid">
+                        <div>
+                            <label>Total Questions</label>
+                            <input type="number" id="total">
+                        </div>
+
+                        <div>
+                            <label>Easy Questions</label>
+                            <input type="number" id="easy_count">
+                        </div>
+
+                        <div>
+                            <label>Medium Questions</label>
+                            <input type="number" id="medium_count">
+                        </div>
+
+                        <div>
+                            <label>Hard Questions</label>
+                            <input type="number" id="hard_count">
+                        </div>
+                    </div>
+
+                    <button class="create-btn" onclick="createAssessment()">
+                        Create Assessment
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- VIEW -->
+            <div id="view" class="page" style="display:none;">
+                <div class="card">
+                    <h3>Assessments</h3>
+                    <table id="table"></table>
+                </div>
+            </div>
+            <!-- HISTORY -->
+            <div id="history" class="page" style="display:none;">
+                 <div class="card">
+                    <h3>Assessment History</h3>
+                <table id="historyTable"></table>
+            </div>
+            </div>
+
+            <!-- PERFORMANCE -->
+            <div id="performance" class="page" style="display:none;">
+                <div class="card">
+                    <h3>Student Performance</h3>
+                    <table id="perf"></table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- JS -->
+<script>
+function createAssessment() {
+    let subject = document.getElementById("subject").value;
+    let duration = document.getElementById("duration").value;
+    let total = document.getElementById("total").value;
+    let e = document.getElementById("easy_count").value;
+    let m = document.getElementById("medium_count").value;
+    let h = document.getElementById("hard_count").value;
+
+    let easy = document.getElementById("easy").files[0];
+    let medium = document.getElementById("medium").files[0];
+    let hard = document.getElementById("hard").files[0];
+
+    if(!subject || !duration || !easy || !medium || !hard || !total){
+        alert("Please fill all fields and upload files");
+        return;
+    }
+
+    if((parseInt(e)+parseInt(m)+parseInt(h)) !== parseInt(total)){
+        alert("Total must match distribution");
+        return;
+    }
+
+    let formData = new FormData();
+    formData.append("subject", subject);
+    formData.append("duration", duration);
+    formData.append("total", total);
+    formData.append("easy_count", e);
+    formData.append("medium_count", m);
+    formData.append("hard_count", h);
+    formData.append("easy", easy);
+    formData.append("medium", medium);
+    formData.append("hard", hard);
+
+    fetch('/admin/create_assessment', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        document.querySelectorAll("input").forEach(i => i.value = "");
+    });
+}
+
+async function load() {
+    let res = await fetch("/admin/assessments");
+    let data = await res.json();
+
+    let table = document.getElementById("table");
+
+    table.innerHTML = `
+        <tr>
+            <th>Subject</th>
+            <th>Duration</th>
+            <th>Total</th>
+            <th>Easy</th>
+            <th>Medium</th>
+            <th>Hard</th>
+            <th>Action</th>
+        </tr>
+    `;
+
+    data.forEach((a) => {
+        table.innerHTML += `
+            <tr>
+                <td>${a.subject}</td>
+                <td>${a.duration} min</td>
+                <td>${a.total}</td>
+                <td>${a.easy}</td>
+                <td>${a.medium}</td>
+                <td>${a.hard}</td>
+                <td>
+                    <button onclick="deleteAssessment(${a.id})">Delete</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+async function deleteAssessment(id) {
+    if (!confirm("Delete this assessment?")) return;
+
+    let res = await fetch(`/admin/delete/${id}`, { method: "DELETE" });
+    let data = await res.json();
+
+    if (data.message === "deleted") {
+        alert("Deleted successfully");
+        load();
+    }
+}
+
+function show(id, el){
+    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+    document.getElementById(id).style.display = 'block';
+
+    document.querySelectorAll('.sidebar ul li').forEach(li => li.classList.remove('active'));
+    el.classList.add('active');
+
+    document.getElementById("title").innerText =
+        id === "create" ? "Create Assessment" :
+        id === "view" ? "View Assessments" :
+        id === "history" ? "Assessement Histrory" :
+        "Performance";
+
+    if(id === 'view'){
+        load();
+    }
+    if(id === 'history'){
+    loadHistory();   // 🔥 THIS IS MISSING
+    }
+    if(id === 'performance'){
+    loadPerformance();
+}
+}
+async function loadHistory() {
+    try {
+        let res = await fetch("/admin/history");
+        let data = await res.json();
+
+        let table = document.getElementById("historyTable");
+
+        table.innerHTML = `
+            <tr>
+                <th>ID</th>
+                <th>Subject</th>
+                <th>Duration</th>
+                <th>Total</th>
+                <th>Easy</th>
+                <th>Medium</th>
+                <th>Hard</th>
+                <th>Status</th>
+            </tr>
+        `;
+
+        data.forEach((a) => {
+            table.innerHTML += `
+                <tr>
+                    <td>${a.id}</td>
+                    <td>${a.subject}</td>
+                    <td>${a.duration} min</td>
+                    <td>${a.total}</td>
+                    <td>${a.easy}</td>
+                    <td>${a.medium}</td>
+                    <td>${a.hard}</td>
+                    <td>
+                        <span style="
+                            padding:5px 10px;
+                            border-radius:5px;
+                            color:white;
+                            background:${a.status === 'active' ? 'green' : 'red'}
+                        ">
+                            ${a.status}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        });
+
+    } catch (err) {
+        console.error(err);
+        alert("Failed to load history");
+    }
+}
+
+function logout(){
+    window.location.href = "/admin/logout";
+}
+async function loadPerformance() {
+    try {
+        let res = await fetch("/admin/api/performance");
+        let data = await res.json();
+
+        console.log(data); // 👈 debug (optional)
+
+        let table = document.getElementById("perf");
+
+        table.innerHTML = `
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Subject</th>
+                <th>Score</th>
+            </tr>
+        `;
+
+        data.forEach(row => {
+            table.innerHTML += `
+                <tr>
+                    <td>${row.name}</td>
+                    <td>${row.email}</td>
+                    <td>${row.subject}</td>
+                    <td>${row.score}</td>
+                </tr>
+            `;
+        });
+
+    } catch (err) {
+        console.error(err);
+        alert("Failed to load performance");
+    }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,150 @@
+:root {
+    --primary: #4f46e5;
+    --primary-dark: #3730a3;
+    --slate-900: #0f172a;
+    --slate-600: #475569;
+    --slate-200: #e2e8f0;
+    --bg-soft: #f8fafc;
+    --white: #ffffff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background-color: #cbd5e1;
+    background: radial-gradient(circle at top left, #e2e8f0, #f8fafc);
+    color: var(--slate-900);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+
+.page-container { width: 100%; max-width: 1000px; padding: 20px; }
+
+.split-card {
+    background: var(--white);
+    border-radius: 24px;
+    display: flex;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--white);
+}
+
+/* Info Panel Styling */
+.info-panel {
+    flex: 1;
+    background: var(--slate-900);
+    color: var(--white);
+    padding: 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 40px; }
+.brand-icon { font-size: 24px; color: var(--primary); }
+.brand-name { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.5px; }
+.brand-name span { opacity: 0.6; } */
+/* Container for the logo to give it professional spacing and alignment */
+
+/* Refined Brand Container */
+.bar {
+    width: 160px;
+    height: auto;
+    display: block;
+}
+.brand { 
+    display: flex; 
+    align-items: center; 
+    gap: 12px;
+    margin-bottom: 48px; 
+}
+
+.brand-logo {
+    /* Set a fixed height but let width be automatic to prevent squashing */
+    height: 100%; 
+    width: 50%;
+    /*max-width: 120px; */
+    
+    /* Subtle rounding instead of a full circle */
+    border-radius: 8px; 
+    
+    /* Professional framing */
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.08); /* Muted glass effect */
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    
+    /* Sharp rendering */
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+.brand-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--white);
+    display: flex;
+    align-items: center;
+}
+
+.brand-name span {
+    color: var(--primary);
+    margin-left: 2px;
+}
+
+.heading { font-size: 2.2rem; font-weight: 700; margin-bottom: 16px; letter-spacing: -1px; }
+.subheading { color: #94a3b8; line-height: 1.6; margin-bottom: 40px; }
+
+/* Stepper Logic */
+.stepper { display: flex; flex-direction: column; gap: 24px; }
+.step { display: flex; align-items: center; gap: 15px; opacity: 0.4; }
+.step.active, .step.completed { opacity: 1; }
+.circle {
+    width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--primary);
+    display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700;
+}
+.step.completed .circle { background: var(--primary); color: white; }
+.step.active .circle { background: white; color: var(--primary); border-width: 3px; }
+.step-text { font-size: 0.9rem; font-weight: 500; }
+
+/* Form Panel Styling */
+.form-panel { flex: 1.2; padding: 60px; background: var(--white); }
+
+.field-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+
+.input-wrap label {
+    display: block; font-size: 0.8rem; font-weight: 700; 
+    color: var(--slate-600); margin-bottom: 8px; text-transform: uppercase;
+}
+
+.input-wrap input {
+    width: 100%; padding: 14px 18px; border: 1.5px solid var(--slate-200);
+    border-radius: 12px; font-size: 1rem; font-weight: 500; outline: none; transition: 0.2s;
+}
+
+.input-wrap input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); }
+.mono { font-family: 'JetBrains Mono', monospace; color: var(--primary); }
+
+.notice { font-size: 0.75rem; color: var(--slate-600); margin-top: 24px; line-height: 1.5; }
+
+.action-area { display: flex; gap: 16px; margin-top: 40px; }
+
+.btn-primary {
+    flex: 2; background: var(--primary); color: white; border: none;
+    padding: 16px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.2s;
+}
+.btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+
+.btn-ghost {
+    flex: 1; background: var(--white); border: 1.5px solid var(--slate-200);
+    color: var(--slate-600); border-radius: 12px; font-weight: 600; cursor: pointer;
+}
+
+@media (max-width: 850px) {
+    .split-card { flex-direction: column; }
+    .info-panel { padding: 40px; }
+}
