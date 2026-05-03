@@ -378,7 +378,7 @@ def result():
     if not data:
         return "No result found"
 
-    # ✅ Safe JSON loading
+    #  Safe JSON loading
     questions = json.loads(data["questions"] or "[]")
 
     if data["answers"]:
@@ -525,12 +525,12 @@ def performance_api():
     labels = []
     scores = []
     percentages = []
-    assessment_ids = []   # 🔥 ADD THIS
+    assessment_ids = []   
 
     for i, row in enumerate(rows, start=1):
-        labels.append(f"Test {i} ({row['subject']})")   # ✅ FIX
+        labels.append(f"Test {i} ({row['subject']})")  
         scores.append(row["score"])
-        assessment_ids.append(row["id"])   # 🔥 ADD THIS
+        assessment_ids.append(row["id"])   
 
         total = row["total"] if row["total"] else 1
         percent = (row["score"] / total) * 100
@@ -540,7 +540,7 @@ def performance_api():
         "labels": labels,
         "scores": scores,
         "percentages": percentages,
-        "assessment_ids": assessment_ids   # 🔥 ADD THIS
+        "assessment_ids": assessment_ids   
     })
 
 #===================================================
@@ -734,14 +734,14 @@ def admin_history():
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++
 @app.route("/admin/logout")
 def admin_logout():
-    session.clear()   # 🔥 clears everything
+    session.clear() 
     return redirect("/admin")
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 #certificate
 #++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-from datetime import datetime   # ADD THIS AT TOP
+from datetime import datetime   
 
 @app.route("/certificate")
 def certificate():
@@ -779,7 +779,7 @@ def certificate():
         score=score,
         total=total,
         percentage=round(percentage, 2),
-        date=current_date   # PASS DATE
+        date=current_date   
     )
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #performance
