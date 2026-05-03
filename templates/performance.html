@@ -125,12 +125,12 @@ body {
 
 <script>
 
-// 🔙 Back button
+// Back button
 function goBack() {
     window.history.back();
 }
 
-// 🚀 Load performance + dropdown
+//  Load performance + dropdown
 async function loadPerformance() {
     try {
         let res = await fetch("/api/performance");
@@ -143,7 +143,7 @@ async function loadPerformance() {
             return;
         }
 
-        // 🎯 CHART
+        //  CHART
         const ctx = document.getElementById("performanceChart").getContext("2d");
 
         const gradient = ctx.createLinearGradient(0, 0, 0, 400);
@@ -174,7 +174,7 @@ async function loadPerformance() {
             }
         });
 
-        // 🎯 DROPDOWN
+        //  DROPDOWN
         let select = document.getElementById("testSelect");
         select.innerHTML = "";
 
@@ -185,7 +185,7 @@ async function loadPerformance() {
             select.appendChild(option);
         });
 
-        // 🔥 LOAD FIRST LEADERBOARD
+        //  LOAD FIRST LEADERBOARD
         if (data.assessment_ids.length > 0) {
             loadLeaderboard(data.assessment_ids[0]);
         }
@@ -196,7 +196,7 @@ async function loadPerformance() {
     }
 }
 
-// 🏆 Load leaderboard ONLY (correct way)
+//  Load leaderboard ONLY (correct way)
 async function loadLeaderboard(assessmentId) {
     try {
         let res = await fetch("/api/leaderboard/" + assessmentId);
@@ -221,13 +221,13 @@ async function loadLeaderboard(assessmentId) {
     }
 }
 
-// 🔥 CHANGE EVENT (when user selects test)
+//  CHANGE EVENT (when user selects test)
 function changeTest() {
     let id = document.getElementById("testSelect").value;
     loadLeaderboard(id);
 }
 
-// 🚀 INIT
+// INIT
 loadPerformance();
 
 </script>
