@@ -350,7 +350,7 @@
             status.innerText = `⚠️ Face not visible (${noFaceTime}s)`;
             status.style.color = "red";
 
-        // ⏳ Give more tolerance (15 seconds)
+        // Give more tolerance (15 seconds)
             if (noFaceTime >= 15) {
              suppressBlur = true;
              alert("❌ Exam Terminated: Face not detected continuously.");
@@ -358,9 +358,9 @@
             }
 
         } else {
-        // ✅ Face detected → reset counter
+        // Face detected → reset counter
          noFaceTime = 0;
-         status.innerText = "✅ Face detected";
+         status.innerText = "Face detected";
             status.style.color = "green";
         }
     });
