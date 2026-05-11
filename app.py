@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 from functools import wraps
 from flask import make_response
 import mysql.connector
+from urllib.parse import urlparse
 
 app = Flask(__name__)
 app.secret_key = "enterprise_secret_key"
@@ -18,12 +19,31 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 # ---------------- DATABASE ----------------
+#db = mysql.connector.connect(
+  #  host="127.0.0.1",              # Use 127.0.0.1 instead of localhost
+  #  user="root",
+  #  password="",                    # leave empty if no password
+    #database="assessment_system",
+    #port=3307                       # Must match your MySQL config
+#)
+
+#cursor = db.cursor(dictionary=True, buffered=True)
+
+import os
+import mysql.connector
+from urllib.parse import urlparse
+
+# ---------------- DATABASE ----------------
+url = os.getenv("DB_URL")
+
+result = urlparse(url)
+
 db = mysql.connector.connect(
-    host="127.0.0.1",              # Use 127.0.0.1 instead of localhost
-    user="root",
-    password="",                    # leave empty if no password
-    database="assessment_system",
-    port=3307                       # Must match your MySQL config
+    host=result.hostname,
+    user=result.username,
+    password=result.password,
+    database=result.path[1:],
+    port=result.port
 )
 
 cursor = db.cursor(dictionary=True, buffered=True)
