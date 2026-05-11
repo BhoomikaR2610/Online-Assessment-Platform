@@ -36,6 +36,9 @@ from urllib.parse import urlparse
 # ---------------- DATABASE ----------------
 url = os.getenv("DB_URL")
 
+if not url:
+    raise Exception("DB_URL is missing in environment variables")
+
 result = urlparse(url)
 
 db = mysql.connector.connect(
