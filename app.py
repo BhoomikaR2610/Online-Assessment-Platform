@@ -4,6 +4,8 @@ import random
 from flask import jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from functools import wraps
+from flask import make_response
 import mysql.connector
 
 app = Flask(__name__)
@@ -34,7 +36,19 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# =========================================================
+# DISABLE CACHE FOR ALL PAGES AFTER LOGIN
+# Prevent browser from showing old pages after logout
+# =========================================================
+@app.after_request
+def add_header(response):
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
 
+
+# =========================================================
 
 # =========================================================
 # REGISTER
@@ -795,16 +809,17 @@ def admin_performance_page():
 #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #performance API
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
+# ============================================
+# ADMIN FILTER API (SUBJECT + TEST FILTER FIX)
+# ============================================
 @app.route("/admin/api/performance")
 def admin_performance_filter():
     if "admin" not in session:
         return jsonify({"error": "unauthorized"})
 
-    subject = request.args.get("subject")
-    assessment_id = request.args.get("assessment_id")
-    score_filter = request.args.get("score_filter")
+    subject = request.args.get("subject", "").strip()
+    assessment_id = request.args.get("assessment_id", "").strip()
+    score_filter = request.args.get("score_filter", "").strip()
 
     query = """
         SELECT 
@@ -822,43 +837,69 @@ def admin_performance_filter():
 
     params = []
 
-    # SUBJECT FILTER
     if subject:
         query += " AND a.subject = %s"
         params.append(subject)
 
-    # TEST FILTER
     if assessment_id:
         query += " AND a.id = %s"
         params.append(assessment_id)
-
-    # SCORE FILTER (TOP / FAIL)
-    if score_filter == "top":
-        query += " AND e.score >= 80"
-
-    if score_filter == "fail":
-        query += " AND e.score < 40"
 
     query += " ORDER BY e.score DESC"
 
     cursor.execute(query, tuple(params))
     rows = cursor.fetchall()
 
-    return jsonify(rows)
+    results = []
 
+    for row in rows:
+        total = row["total"] if row["total"] else 1
+        percentage = round((row["score"] / total) * 100, 2)
+
+        if score_filter == "top" and percentage < 80:
+            continue
+
+        if score_filter == "fail" and percentage >= 40:
+            continue
+
+        results.append({
+            "id": row["id"],
+            "subject": row["subject"],
+            "name": row["name"],
+            "email": row["email"],
+            "score": percentage
+        })
+
+    return jsonify(results)
+# ============================================
+# ADMIN FILTER DROPDOWN API
+# ============================================
 
 #++++++++++++++++++++++++++++++++++++++++++++++++++++
 #filter API
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++
+# REPLACE your /admin/api/performance route with this FULL corrected version
+
 @app.route("/admin/api/filters")
 def admin_filters():
     if "admin" not in session:
         return jsonify({"error": "unauthorized"})
 
-    cursor.execute("SELECT DISTINCT subject FROM assessment")
+    # Get all active subjects
+    cursor.execute("""
+        SELECT DISTINCT subject
+        FROM assessment
+        WHERE status='active'
+    """)
     subjects = [row["subject"] for row in cursor.fetchall()]
 
-    cursor.execute("SELECT id, subject FROM assessment WHERE status='active'")
+    # Get all active tests
+    cursor.execute("""
+        SELECT id, subject
+        FROM assessment
+        WHERE status='active'
+        ORDER BY id DESC
+    """)
     tests = cursor.fetchall()
 
     return jsonify({

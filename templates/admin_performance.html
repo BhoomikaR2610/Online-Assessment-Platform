@@ -1,173 +1,433 @@
+
+<!-- FONT AWESOME -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
 <style>
-    
-.stat-card{
-  flex:1;
-  padding:15px;
-  background:white;
-  border-radius:12px;
-  box-shadow:0 3px 10px rgba(0,0,0,0.1);
-  text-align:center;
-  font-size:16px;
-}
-.stat-card h3{
-  margin:5px 0 0;
-  font-size:22px;
+/* ===========================
+   GLOBAL
+=========================== */
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background: #f4f7fb;
+    color: #333;
 }
 
-</style>
-<div class="container">
-  <div class="card">
-    <h2> Admin Performance Dashboard</h2>
-
-    <!-- FILTER SECTION -->
-    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px;">
-      
-      <select id="subjectFilter" onchange="loadTestsBySubject()"></select>
-      
-      <select id="testFilter"></select>
-
-      <input type="date" id="dateFilter">
-
-      <select id="scoreFilter">
-  <option value="">All Students</option>
-  <option value="top">Top Performers (>=80%)</option>
-  <option value="fail">Failed (<40%)</option>
-</select>
-      <button onclick="loadAdminData()">Apply Filter</button>
-    </div>
-
-    <!-- STATS -->
-    <div style="display:flex; gap:20px; margin-bottom:15px;">
-      <h4 id="totalCount">Total: 0</h4>
-      <h4 id="topCount">Top: 0</h4>
-      <h4 id="failCount">Failed: 0</h4>
-    </div>
-
-    <!-- TABLE -->
-    <table border="1" width="100%" style="text-align:center;">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Score</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody id="adminTable"></tbody>
-    </table>
-    <div class="card" style="margin-top:20px;">
-  <h3>🏆 Top Students</h3>
-  <div id="topStudents"></div>
-</div>
-
-<div class="card" style="margin-top:20px;">
-  <h3>❌ Failed Students</h3>
-  <div id="failedStudents"></div>
-</div>
-  </div>
-</div>
-<script>
-    // Load subjects + tests
-async function loadFilters() {
-  let res = await fetch("/admin/api/filters");
-  let data = await res.json();
-
-  let subjectSelect = document.getElementById("subjectFilter");
-  subjectSelect.innerHTML = "<option value=''>All Subjects</option>";
-
-  data.subjects.forEach(sub => {
-    subjectSelect.innerHTML += `<option value="${sub}">${sub}</option>`;
-  });
-
-  window.allTests = data.tests; // store for filtering
-  populateTests(data.tests);
+.container {
+    max-width: 1400px;
+    margin: auto;
 }
 
-// Subject → filter tests dynamically
-function loadTestsBySubject() {
-  let subject = document.getElementById("subjectFilter").value;
-
-  let filtered = subject
-    ? window.allTests.filter(t => t.subject === subject)
-    : window.allTests;
-
-  populateTests(filtered);
+/* ===========================
+   TOPBAR
+=========================== */
+.topbar {
+    background: white;
+    padding: 20px 30px;
+    border-radius: 16px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    border-left: 5px solid #4f46e5;
 }
 
-function populateTests(tests) {
-  let testSelect = document.getElementById("testFilter");
-  testSelect.innerHTML = "<option value=''>All Tests</option>";
-
-  tests.forEach(t => {
-    testSelect.innerHTML += `<option value="${t.id}">
-      ${t.subject} - ${t.date || 'No Date'}
-    </option>`;
-  });
+.topbar-center {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
+.topbar h2 {
+    color: #4f46e5;
+    font-size: 28px;
+    margin: 0;
+}
+/* ===========================
+   LOGO SIZE FIX
+=========================== */
 
-  async function loadAdminData() {
+/* Remove old icon class if using logo image */
+.top-logo {
+    width: 70px;          /* Adjust size */
+    height: 70px;
+    object-fit: contain;  /* Keeps logo ratio */
+    border-radius: 12px;  /* Slight rounded corners */
+    background: white;
+    padding: 6px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
 
-  let subject = document.getElementById("subjectFilter").value;
-  let test = document.getElementById("testFilter").value;
-  let scoreFilter = document.getElementById("scoreFilter").value;
+/* Center logo properly */
+.topbar-center {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
 
-  let url = `/admin/api/performance?subject=${subject || ""}&assessment_id=${test || ""}&score_filter=${scoreFilter || ""}`;
-
-  let res = await fetch(url);
-  let data = await res.json();
-
-  let tbody = document.getElementById("adminTable");
-  tbody.innerHTML = "";
-
-  let top = 0;
-  let fail = 0;
-  let displayed = 0;
-
-  let topHTML = "";
-  let failHTML = "";
-
-  data.forEach(row => {
-
-    let status = "";
-    let color = "";
-
-    if (row.score >= 80) {
-      status = "🏆 Top";
-      color = "green";
-      top++;
-      topHTML += `<p>🏆 ${row.name} - ${row.score}</p>`;
-    } 
-    else if (row.score < 40) {
-      status = "❌ Fail";
-      color = "red";
-      fail++;
-      failHTML += `<p>❌ ${row.name} - ${row.score}</p>`;
-    } 
-    else {
-      status = "✔ Average";
-      color = "orange";
+/* Mobile size */
+@media (max-width: 768px) {
+    .top-logo {
+        width: 55px;
+        height: 55px;
     }
 
-    displayed++;
-
-    tbody.innerHTML += `
-      <tr>
-        <td>${row.name}</td>
-        <td>${row.email}</td>
-        <td style="color:${color}; font-weight:bold;">${row.score}</td>
-        <td>${status}</td>
-      </tr>
-    `;
-  });
-
-  // STATS
-  document.getElementById("totalCount").innerText = "Total Attended: " + displayed;
-  document.getElementById("topCount").innerText = "Top: " + top;
-  document.getElementById("failCount").innerText = "Failed: " + fail;
-
-  // OPTIONAL EXTRA SECTIONS
-  document.getElementById("topStudents").innerHTML = topHTML;
-  document.getElementById("failedStudents").innerHTML = failHTML;
+    .topbar h2 {
+        font-size: 22px;
+    }
 }
+
+
+
+.back-btn {
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: white;
+    padding: 12px 22px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.back-btn:hover {
+    background: #3730a3;
+}
+
+/* ===========================
+   CARD
+=========================== */
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
+}
+
+/* ===========================
+   FILTERS
+=========================== */
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.filters select,
+.filters input {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    min-width: 180px;
+}
+
+.filters button {
+    padding: 12px 20px;
+    border: none;
+    background: #4f46e5;
+    color: white;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* ===========================
+   STATS
+=========================== */
+.stats-container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 25px;
+}
+
+.stat-card {
+    flex: 1;
+    min-width: 220px;
+    padding: 20px;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    text-align: center;
+    border-top: 4px solid #4f46e5;
+}
+
+.stat-card h3 {
+    margin: 0;
+    font-size: 30px;
+    color: #4f46e5;
+}
+
+/* ===========================
+   TABLE
+=========================== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: white;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+table th {
+    background: #4f46e5;
+    color: white;
+    padding: 15px;
+}
+
+table td {
+    padding: 14px;
+    border-bottom: 1px solid #eee;
+    text-align: center;
+}
+
+table tr:hover {
+    background: #f9fafb;
+}
+
+/* ===========================
+   STUDENT LISTS
+=========================== */
+.student-list p {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+/* ===========================
+   RESPONSIVE
+=========================== */
+@media (max-width: 768px) {
+    .filters {
+        flex-direction: column;
+    }
+
+    .filters select,
+    .filters input,
+    .filters button {
+        width: 100%;
+    }
+
+    .stats-container {
+        flex-direction: column;
+    }
+
+    .topbar {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    table {
+        display: block;
+        overflow-x: auto;
+    }
+}
+</style>
+
+<!-- ===========================
+     TOPBAR HTML (USE YOUR LOGO)
+=========================== -->
+<div class="topbar">
+    <div class="topbar-left">
+        <button class="back-btn" onclick="window.history.back()">Back</button>
+    </div>
+
+    <div class="topbar-center">
+        <!-- Replace img2.png with your actual logo file -->
+        <img src="{{ url_for('static', filename='img2.png') }}" alt="Logo" class="top-logo">
+        <h2>Performance Dashboard</h2>
+    </div>
+</div>
+
+<div class="container">
+    <div class="card">
+
+        <!-- FILTERS -->
+        <div class="filters">
+            <select id="subjectFilter" onchange="loadTestsBySubject()">
+                <option value="">All Subjects</option>
+            </select>
+
+            <select id="testFilter">
+                <option value="">All Tests</option>
+            </select>
+
+            <input type="date" id="dateFilter">
+
+            <select id="scoreFilter">
+                <option value="">All Students</option>
+                <option value="top">Top Performers (>=80%)</option>
+                <option value="fail">Failed (&lt;40%)</option>
+            </select>
+
+            <button onclick="loadAdminData()">Apply Filter</button>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <p>Total Students</p>
+                <h3 id="totalCount">0</h3>
+            </div>
+
+            <div class="stat-card">
+                <p>Top Students</p>
+                <h3 id="topCount">0</h3>
+            </div>
+
+            <div class="stat-card">
+                <p>Failed Students</p>
+                <h3 id="failCount">0</h3>
+            </div>
+        </div>
+
+        <!-- TABLE -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Score</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="adminTable"></tbody>
+        </table>
+    </div>
+
+    <!-- TOP STUDENTS -->
+    <div class="card">
+        <h3>Top Students</h3>
+        <div id="topStudents" class="student-list"></div>
+    </div>
+
+    <!-- FAILED STUDENTS -->
+    <div class="card">
+        <h3>Failed Students</h3>
+        <div id="failedStudents" class="student-list"></div>
+    </div>
+</div>
+
+<script>
+window.allTests = [];
+
+/* LOAD FILTERS */
+async function loadFilters() {
+    try {
+        let res = await fetch("/admin/api/filters");
+        let data = await res.json();
+
+        let subjectSelect = document.getElementById("subjectFilter");
+        subjectSelect.innerHTML = "<option value=''>All Subjects</option>";
+
+        data.subjects.forEach(subject => {
+            let option = document.createElement("option");
+            option.value = subject;
+            option.textContent = subject;
+            subjectSelect.appendChild(option);
+        });
+
+        window.allTests = data.tests;
+        populateTests(data.tests);
+
+    } catch (error) {
+        console.error("Failed to load filters:", error);
+    }
+}
+
+/* FILTER TESTS */
+function loadTestsBySubject() {
+    let subject = document.getElementById("subjectFilter").value;
+
+    let filteredTests = subject
+        ? window.allTests.filter(test => test.subject === subject)
+        : window.allTests;
+
+    populateTests(filteredTests);
+}
+
+/* POPULATE TESTS */
+function populateTests(tests) {
+    let testSelect = document.getElementById("testFilter");
+    testSelect.innerHTML = "<option value=''>All Tests</option>";
+
+    tests.forEach(test => {
+        let option = document.createElement("option");
+        option.value = test.id;
+        option.textContent = `Test ${test.id} - ${test.subject}`;
+        testSelect.appendChild(option);
+    });
+}
+
+/* LOAD PERFORMANCE */
+async function loadAdminData() {
+    try {
+        let subject = document.getElementById("subjectFilter").value;
+        let test = document.getElementById("testFilter").value;
+        let scoreFilter = document.getElementById("scoreFilter").value;
+
+        let url = `/admin/api/performance?subject=${encodeURIComponent(subject)}&assessment_id=${encodeURIComponent(test)}&score_filter=${encodeURIComponent(scoreFilter)}`;
+
+        let res = await fetch(url);
+        let data = await res.json();
+
+        let tbody = document.getElementById("adminTable");
+        tbody.innerHTML = "";
+
+        let top = 0;
+        let fail = 0;
+
+        let topHTML = "";
+        let failHTML = "";
+
+        data.forEach(student => {
+            let percentage = student.score;
+            let status = "Average";
+            let color = "orange";
+
+            if (percentage >= 80) {
+                status = "Top";
+                color = "green";
+                top++;
+                topHTML += `<p>${student.name} - ${percentage}%</p>`;
+            } else if (percentage < 40) {
+                status = "Fail";
+                color = "red";
+                fail++;
+                failHTML += `<p>${student.name} - ${percentage}%</p>`;
+            }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${student.name}</td>
+                    <td>${student.email}</td>
+                    <td style="color:${color}; font-weight:bold;">
+                        ${percentage}%
+                    </td>
+                    <td>${status}</td>
+                </tr>
+            `;
+        });
+
+        document.getElementById("totalCount").innerText = data.length;
+        document.getElementById("topCount").innerText = top;
+        document.getElementById("failCount").innerText = fail;
+
+        document.getElementById("topStudents").innerHTML = topHTML || "<p>No top students found.</p>";
+        document.getElementById("failedStudents").innerHTML = failHTML || "<p>No failed students found.</p>";
+
+    } catch (error) {
+        console.error("Failed to load performance data:", error);
+    }
+}
+
+/* INITIAL LOAD */
+window.onload = async function () {
+    await loadFilters();
+    await loadAdminData();
+};
 </script>
+

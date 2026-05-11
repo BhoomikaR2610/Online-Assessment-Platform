@@ -30,8 +30,9 @@ body {
 }
 
 .logo img {
-    height: 8%;
-    width: 8%;
+    height: 10%;
+    width: 10%;
+    object-fit: contain;
 }
 
 .logo-text .title {
@@ -75,6 +76,14 @@ body {
     color: gray;
     margin-top: 30px;
 }
+
+table {
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 10px;
+}
 </style>
 </head>
 
@@ -83,7 +92,7 @@ body {
 <!-- HEADER -->
 <div class="header">
     <div class="logo">
-        <img src="{{ url_for('static', filename='img2.png') }}">
+        <img src="{{ url_for('static', filename='img2.png') }}" alt="Logo">
         <div class="logo-text">
             <div class="title">Performance Dashboard</div>
         </div>
@@ -103,7 +112,7 @@ body {
     </div>
 </div>
 
-<!-- 🏆 LEADERBOARD -->
+<!-- LEADERBOARD -->
 <div class="container">
     <div class="card">
         <h2>🏆 Leaderboard</h2>
@@ -124,17 +133,29 @@ body {
 </div>
 
 <script>
+let performanceChart = null;
 
 // Back button
 function goBack() {
     window.history.back();
 }
 
-//  Load performance + dropdown
+// Load performance data
 async function loadPerformance() {
     try {
         let res = await fetch("/api/performance");
+
+        if (!res.ok) {
+            throw new Error("Performance API failed");
+        }
+
         let data = await res.json();
+
+        if (data.error) {
+            alert("Session expired. Please login again.");
+            window.location.href = "/login";
+            return;
+        }
 
         if (!data.labels || data.labels.length === 0) {
             document.getElementById("performanceChart").style.display = "none";
@@ -143,14 +164,18 @@ async function loadPerformance() {
             return;
         }
 
-        //  CHART
         const ctx = document.getElementById("performanceChart").getContext("2d");
 
         const gradient = ctx.createLinearGradient(0, 0, 0, 400);
         gradient.addColorStop(0, "#4f46e5");
         gradient.addColorStop(1, "#22c55e");
 
-        new Chart(ctx, {
+        // Destroy old chart if exists
+        if (performanceChart) {
+            performanceChart.destroy();
+        }
+
+        performanceChart = new Chart(ctx, {
             type: "bar",
             data: {
                 labels: data.labels,
@@ -159,8 +184,8 @@ async function loadPerformance() {
                     data: data.percentages,
                     backgroundColor: gradient,
                     borderRadius: 10,
-                    barThickness: 25,        // 🔥 reduce thickness
-                    maxBarThickness: 30  
+                    barThickness: 25,
+                    maxBarThickness: 30
                 }]
             },
             options: {
@@ -174,36 +199,56 @@ async function loadPerformance() {
             }
         });
 
-        //  DROPDOWN
+        // Populate dropdown
         let select = document.getElementById("testSelect");
         select.innerHTML = "";
 
         data.labels.forEach((label, index) => {
             let option = document.createElement("option");
             option.value = data.assessment_ids[index];
-            option.text = label;
+            option.textContent = label;
             select.appendChild(option);
         });
 
-        //  LOAD FIRST LEADERBOARD
+        // Load first leaderboard
         if (data.assessment_ids.length > 0) {
             loadLeaderboard(data.assessment_ids[0]);
         }
 
     } catch (err) {
-        console.error(err);
+        console.error("Performance Error:", err);
         alert("Error loading performance data");
     }
 }
 
-//  Load leaderboard ONLY (correct way)
+// Load leaderboard
 async function loadLeaderboard(assessmentId) {
     try {
         let res = await fetch("/api/leaderboard/" + assessmentId);
+
+        if (!res.ok) {
+            throw new Error("Leaderboard API failed");
+        }
+
         let data = await res.json();
+
+        if (data.error) {
+            alert("Session expired. Please login again.");
+            window.location.href = "/login";
+            return;
+        }
 
         let tbody = document.getElementById("leaderboardBody");
         tbody.innerHTML = "";
+
+        if (data.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="3">No leaderboard data available</td>
+                </tr>
+            `;
+            return;
+        }
 
         data.forEach(row => {
             let tr = `
@@ -217,19 +262,18 @@ async function loadLeaderboard(assessmentId) {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error("Leaderboard Error:", err);
     }
 }
 
-//  CHANGE EVENT (when user selects test)
+// Change selected test
 function changeTest() {
     let id = document.getElementById("testSelect").value;
     loadLeaderboard(id);
 }
 
-// INIT
+// Initialize page
 loadPerformance();
-
 </script>
 
 </body>
