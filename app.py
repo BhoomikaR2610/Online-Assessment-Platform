@@ -46,7 +46,7 @@ db = mysql.connector.connect(
     user=result.username,
     password=result.password,
     database=result.path[1:],
-    port=result.port
+   port=int(result.port) if result.port else 3306
 )
 
 cursor = db.cursor(dictionary=True, buffered=True)
@@ -951,4 +951,5 @@ def admin_filters():
 # RUN APP
 # =========================================================
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
