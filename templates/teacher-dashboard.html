@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Teacher Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style1.css') }}">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --sidebar-bg: #0f172a;
+            --body-bg: #f1f5f9;
+            --border-color: #e2e8f0;
+            --text-main: #1e293b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            display: flex;
+            min-height: 100vh;
+            background: var(--body-bg);
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px;
+            background: var(--sidebar-bg);
+            height: 100vh;
+            position: fixed;
+            padding: 30px 20px;
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-img {
+            width: 100%;
+            height: 40%;
+            object-fit: contain;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: 0.3s;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: rgba(255,255,255,0.08);
+        }
+
+        /* MAIN */
+        .main-content {
+            margin-left: 260px;
+            width: calc(100% - 260px);
+        }
+
+        header {
+            background: white;
+            height: 80px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .profile-pic {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+        }
+
+        .logout-btn {
+            background: #fff1f2;
+            color: #e11d48;
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+        }
+
+        /* CONTENT */
+        .content {
+            padding: 50px;
+        }
+
+        .welcome-box {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        button {
+            background: red;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: darkred;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+
+    <div class="logo-section">
+        <img src="{{ url_for('static', filename='img2.png') }}" class="logo-img">
+    </div>
+
+    <a href="#" class="nav-item active" onclick="showHome()">
+        <i class='bx bxs-dashboard'></i> Home
+    </a>
+
+    <a href="#" class="nav-item" onclick="showAssessments()">
+        <i class='bx bx-folder'></i> My Assessments
+    </a>
+
+    <a href="{{ url_for('teacher_create_page') }}" class="nav-item">
+        <i class='bx bx-plus'></i> Create Assessment
+    </a>
+
+    <a href="{{ url_for('logout') }}" class="nav-item">
+        <i class='bx bx-log-out'></i> Logout
+    </a>
+
+</nav>
+
+<!-- MAIN -->
+<div class="main-content">
+
+<header>
+    <h2>Teacher Dashboard</h2>
+
+    <div class="header-right">
+        <div class="user-pill">
+            <img src="{{ url_for('static', filename='img4.jpg') }}" class="profile-pic">
+            <span>{{ teacher.name }}</span>
+        </div>
+    </div>
+</header>
+
+<!-- CONTENT -->
+<div class="content">
+
+    <!-- HOME -->
+    <div id="homeBox" class="welcome-box">
+
+        <h2>Welcome, {{ teacher.name }} 👋</h2>
+
+        <p>Subject: {{ teacher.subject_name }}</p>
+
+        <div style="margin-top:20px;">
+            <b>Stats:</b>
+            Assessments: {{ total_assessments }} |
+            Students: {{ total_students }} |
+            Pending: {{ pending }}
+        </div>
+
+    </div>
+
+    <!-- ASSESSMENTS -->
+    <div id="assessmentsBox" style="display:none;">
+        <div class="welcome-box">
+            <h2>My Assessments</h2>
+
+            <table id="teacherTable"></table>
+        </div>
+    </div>
+
+</div>
+
+</div>
+
+<!-- JS -->
+<script>
+
+function showHome() {
+    document.getElementById("homeBox").style.display = "block";
+    document.getElementById("assessmentsBox").style.display = "none";
+}
+
+function showAssessments() {
+    document.getElementById("homeBox").style.display = "none";
+    document.getElementById("assessmentsBox").style.display = "block";
+
+    loadTeacherAssessments();
+}
+
+/* LOAD */
+async function loadTeacherAssessments() {
+
+    let res = await fetch("/teacher/assessments");
+    let data = await res.json();
+
+    let table = document.getElementById("teacherTable");
+
+    table.innerHTML = `
+        <tr>
+            <th>ID</th>
+            <th>Subject</th>
+            <th>Duration</th>
+            <th>Total</th>
+            <th>Easy</th>
+            <th>Medium</th>
+            <th>Hard</th>
+            <th>Action</th>
+        </tr>
+    `;
+
+    data.forEach(a => {
+        table.innerHTML += `
+            <tr>
+                <td>${a.id}</td>
+                <td>${a.subject}</td>
+                <td>${a.duration}</td>
+                <td>${a.total}</td>
+                <td>${a.easy}</td>
+                <td>${a.medium}</td>
+                <td>${a.hard}</td>
+                <td>
+                    <button onclick="deleteAssessment(${a.id})">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+/* DELETE */
+async function deleteAssessment(id) {
+
+    if (!confirm("Delete this assessment?")) return;
+
+    let res = await fetch(`/teacher/delete/${id}`, {
+        method: "DELETE"
+    });
+
+    let data = await res.json();
+
+    alert(data.message);
+
+    loadTeacherAssessments();
+}
+
+</script>
+
+</body>
+</html>
