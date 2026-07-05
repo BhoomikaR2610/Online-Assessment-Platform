@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Teacher Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style3.css') }}">
+</head>
+<body>
+
+<div class="login-card">
+
+    <!-- LEFT SIDE -->
+    <div class="card-left">
+        <img src="{{ url_for('static', filename='img1.avif') }}" alt="Illustration" class="hero-image">
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="card-right">
+        <div class="form-wrapper">
+
+            <!-- LOGO -->
+            <img src="{{ url_for('static', filename='img2.png') }}" alt="Logo" class="overlay-logo">
+
+            <!-- TITLE -->
+            <h2>Teacher Login</h2>
+
+            <!-- FLASH MESSAGES -->
+            {% for msg in get_flashed_messages() %}
+                <div class="flash">{{ msg }}</div>
+            {% endfor %}
+
+            <!-- FORM -->
+            <form method="POST">
+                <input type="email" name="email" placeholder="Enter your email" required>
+                <input type="password" name="password" placeholder="Enter your password" required>
+                <button type="submit">Login</button>
+            </form>
+
+            <!-- LINKS -->
+            <p class="footer-text">
+                <a href="/forgot">Forgot Password?</a> &nbsp;|&nbsp;
+                <a href="/">New user? Register</a>
+            </p>
+
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
