@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 from functools import wraps
 from flask import make_response
 import mysql.connector
-from urllib.parse import urlparse
+import pandas as pd
 
 app = Flask(__name__)
 app.secret_key = "enterprise_secret_key"
@@ -19,34 +19,12 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 # ---------------- DATABASE ----------------
-#db = mysql.connector.connect(
-  #  host="127.0.0.1",              # Use 127.0.0.1 instead of localhost
-  #  user="root",
-  #  password="",                    # leave empty if no password
-    #database="assessment_system",
-    #port=3307                       # Must match your MySQL config
-#)
-
-#cursor = db.cursor(dictionary=True, buffered=True)
-
-import os
-import mysql.connector
-from urllib.parse import urlparse
-
-# ---------------- DATABASE ----------------
-url = os.getenv("DB_URL")
-
-if not url:
-    raise Exception("DB_URL is missing in environment variables")
-
-result = urlparse(url)
-
 db = mysql.connector.connect(
-    host=result.hostname,
-    user=result.username,
-    password=result.password,
-    database=result.path[1:],
-   port=int(result.port) if result.port else 3306
+    host="127.0.0.1",              # Use 127.0.0.1 instead of localhost
+    user="root",
+    password="",                    # leave empty if no password
+    database="assessment_system",
+    port=3307                     # Must match your MySQL config
 )
 
 cursor = db.cursor(dictionary=True, buffered=True)
@@ -58,6 +36,47 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+# ADD STEP 2 HERE
+def convert_excel_to_json(filepath):
+    df = pd.read_excel(filepath)
+
+    questions = []
+
+    required_columns = [
+        "question",
+        "option1",
+        "option2",
+        "option3",
+        "option4",
+        "correct_answer"
+    ]
+
+    for col in required_columns:
+        if col not in df.columns:
+            raise Exception(f"Missing column: {col}")
+
+    for _, row in df.iterrows():
+        questions.append({
+            "question": row["question"],
+            "options": [
+                str(row["option1"]),
+                str(row["option2"]),
+                str(row["option3"]),
+                str(row["option4"])
+            ],
+            "answer": str(row["correct_answer"])
+        })
+
+    json_filename = filepath.rsplit(".", 1)[0] + ".json"
+
+    with open(json_filename, "w") as f:
+        json.dump(questions, f, indent=4)
+
+    return os.path.basename(json_filename)
+
+
 
 # =========================================================
 # DISABLE CACHE FOR ALL PAGES AFTER LOGIN
@@ -246,7 +265,7 @@ def dashboard():
 
     # Get all active assessments for the student's course
     cursor.execute("""
-        SELECT * FROM assessment
+        SELECT * FROM assessments
         WHERE status='active' AND subject=%s
     """, (user['course'],))
     assessments = cursor.fetchall()
@@ -263,7 +282,7 @@ def assessment(assessment_id):
 
     # GET assessment
     cursor.execute(
-        "SELECT * FROM assessment WHERE id=%s AND status='active'",
+        "SELECT * FROM assessments WHERE id=%s AND status='active'",
         (assessment_id,)
     )
     assessment_data = cursor.fetchone()
@@ -375,7 +394,7 @@ def assessment(assessment_id):
             if answers.get(q["id"]) == q["correct_answer"]:
                 score += 1
         # Calculate total from DB
-        cursor.execute("SELECT total FROM assessment WHERE id=%s", (assessment_id,))
+        cursor.execute("SELECT total FROM assessments WHERE id=%s", (assessment_id,))
         assessment_info = cursor.fetchone()
 
         total = assessment_info["total"] if assessment_info else len(questions)
@@ -473,7 +492,7 @@ def galary():
     cursor.execute("""
         SELECT a.subject, e.score, a.total, e.id AS attempt_id
         FROM exam_attempts e
-        JOIN assessment a ON e.assessment_id = a.id
+        JOIN assessments a ON e.assessment_id = a.id
         WHERE e.student_email = %s
         AND e.status = 'completed'
         AND e.result_status = 'PASSED'
@@ -504,7 +523,7 @@ def certificate_by_id(attempt_id):
     cursor.execute("""
         SELECT e.score, a.total, s.name, s.course
         FROM exam_attempts e
-        JOIN assessment a ON e.assessment_id = a.id
+        JOIN assessments a ON e.assessment_id = a.id
         JOIN studentss s ON e.student_email = s.email
         WHERE e.id=%s AND e.student_email=%s
     """, (attempt_id, session["email"]))
@@ -553,7 +572,7 @@ def performance_api():
     cursor.execute("""
         SELECT a.id, a.subject, e.score, a.total
         FROM exam_attempts e
-        JOIN assessment a ON e.assessment_id = a.id
+        JOIN assessments a ON e.assessment_id = a.id
         WHERE e.student_email = %s AND e.status = 'completed'
     """, (session["email"],))
 
@@ -653,6 +672,7 @@ def admin_dashboard():
 def create_assessment():
     if "admin" not in session:
         return {"error": "unauthorized"}
+    
    
 
     subject = request.form['subject']
@@ -661,6 +681,7 @@ def create_assessment():
     easy = request.form['easy_count']
     medium = request.form['medium_count']
     hard = request.form['hard_count']
+    teacher_id = request.form.get("teacher_id")
 
     # Files
     easy_file = request.files['easy']
@@ -678,11 +699,35 @@ def create_assessment():
 
     # Insert into database
     sql = """
-        INSERT INTO assessment
-        (subject, duration, total, easy, medium, hard, easy_file, medium_file, hard_file)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-    """
-    values = (subject, duration, total, easy, medium, hard, easy_file.filename, medium_file.filename, hard_file.filename)
+    INSERT INTO assessments
+    (
+        subject,
+        duration,
+        total,
+        easy,
+        medium,
+        hard,
+        easy_file,
+        medium_file,
+        hard_file,
+        teacher_id
+    )
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+"""
+
+    values = (
+    subject,
+    duration,
+    total,
+    easy,
+    medium,
+    hard,
+    easy_file.filename,
+    medium_file.filename,
+    hard_file.filename,
+    session["teacher"]
+    )
+
     cursor.execute(sql, values)
     db.commit()
 
@@ -698,7 +743,7 @@ def get_assessments():
     if "admin" not in session:
         return {"error": "unauthorized"}
 
-    cursor.execute("SELECT * FROM assessment where status='active'")
+    cursor.execute("SELECT * FROM assessments where status='active'")
     return jsonify(cursor.fetchall())
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -710,7 +755,7 @@ def delete_assessment(id):
     if "admin" not in session:
         return {"error": "unauthorized"}
 
-    cursor.execute("UPDATE assessment  SET status='deleted' WHERE id=%s", (id,))
+    cursor.execute("UPDATE assessments SET status='deleted' WHERE id=%s", (id,))
     db.commit()
 
     return jsonify({"message": "deleted"})
@@ -760,7 +805,7 @@ def admin_history():
 
     cursor.execute("""
         SELECT id, subject, duration, total, easy, medium, hard, status
-        FROM assessment
+        FROM assessments
         ORDER BY id DESC
     """)
 
@@ -788,168 +833,4 @@ def certificate():
     cursor.execute("""
         SELECT e.score, a.total, s.name, s.course
         FROM exam_attempts e
-        JOIN assessment a ON e.assessment_id = a.id
-        JOIN studentss s ON e.student_email = s.email
-        WHERE e.id=%s
-    """, (session["attempt_id"],))
-
-    data = cursor.fetchone()
-
-    if not data:
-        return "No certificate data found"
-
-    score = data["score"]
-    total = data["total"]
-    percentage = (score / total) * 100
-
-    if percentage < 35:
-        flash("Certificate available only if score is above 35%")
-        return redirect(url_for("result"))
-
-    # ✅ FIX: Generate date here
-    current_date = datetime.now().strftime("%d %B %Y")
-
-    return render_template(
-        "certificate.html",
-        name=data["name"],
-        course=data["course"],
-        score=score,
-        total=total,
-        percentage=round(percentage, 2),
-        date=current_date   
-    )
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#performance
-#++++++++++++++++++++++++++++++++++++++++++++++++++++
-@app.route("/admin/performance_page")
-def admin_performance_page():
-    if "admin" not in session:
-        return redirect("/admin")
-    return render_template("admin_performance.html")
-
-
-
-#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#performance API
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# ============================================
-# ADMIN FILTER API (SUBJECT + TEST FILTER FIX)
-# ============================================
-@app.route("/admin/api/performance")
-def admin_performance_filter():
-    if "admin" not in session:
-        return jsonify({"error": "unauthorized"})
-
-    subject = request.args.get("subject", "").strip()
-    assessment_id = request.args.get("assessment_id", "").strip()
-    score_filter = request.args.get("score_filter", "").strip()
-
-    query = """
-        SELECT 
-            a.id,
-            a.subject,
-            a.total,
-            s.name,
-            s.email,
-            e.score
-        FROM exam_attempts e
-        JOIN assessment a ON e.assessment_id = a.id
-        JOIN studentss s ON e.student_email = s.email
-        WHERE e.status = 'completed'
-    """
-
-    params = []
-
-    if subject:
-        query += " AND a.subject = %s"
-        params.append(subject)
-
-    if assessment_id:
-        query += " AND a.id = %s"
-        params.append(assessment_id)
-
-    query += " ORDER BY e.score DESC"
-
-    cursor.execute(query, tuple(params))
-    rows = cursor.fetchall()
-
-    results = []
-
-    for row in rows:
-        total = row["total"] if row["total"] else 1
-        percentage = round((row["score"] / total) * 100, 2)
-
-        if score_filter == "top" and percentage < 80:
-            continue
-
-        if score_filter == "fail" and percentage >= 40:
-            continue
-
-        results.append({
-            "id": row["id"],
-            "subject": row["subject"],
-            "name": row["name"],
-            "email": row["email"],
-            "score": percentage
-        })
-
-    return jsonify(results)
-# ============================================
-# ADMIN FILTER DROPDOWN API
-# ============================================
-
-#++++++++++++++++++++++++++++++++++++++++++++++++++++
-#filter API
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++
-# REPLACE your /admin/api/performance route with this FULL corrected version
-
-@app.route("/admin/api/filters")
-def admin_filters():
-    if "admin" not in session:
-        return jsonify({"error": "unauthorized"})
-
-    # Get all active subjects
-    cursor.execute("""
-        SELECT DISTINCT subject
-        FROM assessment
-        WHERE status='active'
-    """)
-    subjects = [row["subject"] for row in cursor.fetchall()]
-
-    # Get all active tests
-    cursor.execute("""
-        SELECT id, subject
-        FROM assessment
-        WHERE status='active'
-        ORDER BY id DESC
-    """)
-    tests = cursor.fetchall()
-
-    return jsonify({
-        "subjects": subjects,
-        "tests": tests
-    })
-
-#+++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# =========================================================
-# RUN APP
-# =========================================================
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+        JOIN assessments a ON e.assessment_id = a.i
