@@ -24,7 +24,7 @@ db = mysql.connector.connect(
     user="root",
     password="",                    # leave empty if no password
     database="assessment_system",
-    port=3307                     # Must match your MySQL config
+    port=3306                      # Must match your MySQL config
 )
 
 cursor = db.cursor(dictionary=True, buffered=True)
@@ -833,4 +833,513 @@ def certificate():
     cursor.execute("""
         SELECT e.score, a.total, s.name, s.course
         FROM exam_attempts e
-        JOIN assessments a ON e.assessment_id = a.i
+        JOIN assessments a ON e.assessment_id = a.id
+        JOIN studentss s ON e.student_email = s.email
+        WHERE e.id=%s
+    """, (session["attempt_id"],))
+
+    data = cursor.fetchone()
+
+    if not data:
+        return "No certificate data found"
+
+    score = data["score"]
+    total = data["total"]
+    percentage = (score / total) * 100
+
+    if percentage < 35:
+        flash("Certificate available only if score is above 35%")
+        return redirect(url_for("result"))
+
+    # ✅ FIX: Generate date here
+    current_date = datetime.now().strftime("%d %B %Y")
+
+    return render_template(
+        "certificate.html",
+        name=data["name"],
+        course=data["course"],
+        score=score,
+        total=total,
+        percentage=round(percentage, 2),
+        date=current_date   
+    )
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#performance
+#++++++++++++++++++++++++++++++++++++++++++++++++++++
+@app.route("/admin/performance_page")
+def admin_performance_page():
+    if "admin" not in session:
+        return redirect("/admin")
+    return render_template("admin_performance.html")
+
+
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#performance API
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# ============================================
+# ADMIN FILTER API (SUBJECT + TEST FILTER FIX)
+# ============================================
+@app.route("/admin/api/performance")
+def admin_performance_filter():
+    if "admin" not in session:
+        return jsonify({"error": "unauthorized"})
+
+    subject = request.args.get("subject", "").strip()
+    assessment_id = request.args.get("assessment_id", "").strip()
+    score_filter = request.args.get("score_filter", "").strip()
+
+    query = """
+        SELECT 
+            a.id,
+            a.subject,
+            a.total,
+            s.name,
+            s.email,
+            e.score
+        FROM exam_attempts e
+        JOIN assessments a ON e.assessment_id = a.id
+        JOIN studentss s ON e.student_email = s.email
+        WHERE e.status = 'completed'
+    """
+
+    params = []
+
+    if subject:
+        query += " AND a.subject = %s"
+        params.append(subject)
+
+    if assessment_id:
+        query += " AND a.id = %s"
+        params.append(assessment_id)
+
+    query += " ORDER BY e.score DESC"
+
+    cursor.execute(query, tuple(params))
+    rows = cursor.fetchall()
+
+    results = []
+
+    for row in rows:
+        total = row["total"] if row["total"] else 1
+        percentage = round((row["score"] / total) * 100, 2)
+
+        if score_filter == "top" and percentage < 80:
+            continue
+
+        if score_filter == "fail" and percentage >= 40:
+            continue
+
+        results.append({
+            "id": row["id"],
+            "subject": row["subject"],
+            "name": row["name"],
+            "email": row["email"],
+            "score": percentage
+        })
+
+    return jsonify(results)
+# ============================================
+# ADMIN FILTER DROPDOWN API
+# ============================================
+
+#++++++++++++++++++++++++++++++++++++++++++++++++++++
+#filter API
+#+++++++++++++++++++++++++++++++++++++++++++++++++++++
+# REPLACE your /admin/api/performance route with this FULL corrected version
+
+@app.route("/admin/api/filters")
+def admin_filters():
+    if "admin" not in session:
+        return jsonify({"error": "unauthorized"})
+
+    # Get all active subjects
+    cursor.execute("""
+        SELECT DISTINCT subject
+        FROM assessments
+        WHERE status='active'
+    """)
+    subjects = [row["subject"] for row in cursor.fetchall()]
+
+    # Get all active tests
+    cursor.execute("""
+        SELECT id, subject
+        FROM assessments
+        WHERE status='active'
+        ORDER BY id DESC
+    """)
+    tests = cursor.fetchall()
+
+    return jsonify({
+        "subjects": subjects,
+        "tests": tests
+    })
+
+#+++++++++++++++++++++++++++++++++++++++++++++++++++
+#Teacher
+#+++++++++++++++++++++++++++++++++++++++++++++++++=
+@app.route("/admin/add_teacher", methods=["POST"])
+def add_teacher():
+
+    if "admin" not in session:
+        return {"error": "unauthorized"}
+
+    name = request.form["name"]
+    email = request.form["email"].lower()
+    password = generate_password_hash(request.form["password"])
+
+    subject_id = request.form["subject_id"]
+
+    cursor.execute("""
+        INSERT INTO teachers(name,email,password,subject_id)
+        VALUES(%s,%s,%s,%s)
+    """, (name,email,password,subject_id))
+
+    db.commit()
+
+    return jsonify({"message":"Teacher Added Successfully"})
+#=============================================================
+@app.route("/admin/teachers")
+def get_teachers():
+
+    cursor.execute("""
+        SELECT t.id,
+               t.name,
+               t.email,
+               s.subject_name
+        FROM teachers t
+        LEFT JOIN subjects s
+        ON t.subject_id = s.id
+    """)
+
+    rows = cursor.fetchall()
+
+    return jsonify(rows)
+#========================================================
+#delete teacher
+#========================================================
+@app.route("/admin/delete_teacher/<int:id>", methods=["DELETE"])
+def delete_teacher(id):
+
+    if "admin" not in session:
+        return jsonify({"message": "Unauthorized"})
+
+    cursor.execute(
+        "DELETE FROM teachers WHERE id=%s",
+        (id,)
+    )
+
+    db.commit()
+
+    return jsonify({"message": "Teacher Deleted Successfully"})
+#========================================================
+#subject adding
+#====================================================
+@app.route("/admin/add_subject", methods=["POST"])
+def add_subject():
+
+    if "admin" not in session:
+        return {"error": "unauthorized"}
+
+    name = request.form["name"]
+    total_marks = request.form["total_marks"]
+    max_assessments = request.form["max_assessments"]
+
+    cursor.execute("""
+        INSERT INTO subjects(subject_name, total_marks, max_assessments)
+        VALUES (%s, %s, %s)
+    """, (name, total_marks, max_assessments))
+
+    db.commit()
+
+    return jsonify({"message": "Subject added successfully"})
+#=============================================================
+@app.route("/admin/subjects")
+def get_subjects():
+
+    if "admin" not in session:
+        return jsonify({"error": "unauthorized"})
+
+    cursor.execute("""
+        SELECT id, subject_name, total_marks, max_assessments
+        FROM subjects
+        ORDER BY id DESC
+    """)
+
+    return jsonify(cursor.fetchall())
+#===============================================
+#Teacher Module
+#teacher Login
+#===============================================
+@app.route("/teacher/login", methods=["GET","POST"])
+def teacher_login():
+
+    if request.method == "POST":
+
+        email = request.form["email"].lower()
+        password = request.form["password"]
+
+        cursor.execute(
+            "SELECT * FROM teachers WHERE email=%s",
+            (email,)
+        )
+
+        teacher = cursor.fetchone()
+
+        if teacher and check_password_hash(
+                teacher["password"],
+                password
+        ):
+
+            session["teacher"] = teacher["id"]
+
+            return redirect("/teacher/dashboard")
+
+        return "Invalid Email or Password"
+
+    return render_template("teacher_login.html")
+#===============================================
+#teacher assessment creation
+#===============================================
+@app.route("/teacher/create_assessment", methods=["POST"])
+def teacher_create_assessment():
+
+    if "teacher" not in session:
+        return jsonify({"error": "Unauthorized"})
+
+    teacher_id = session["teacher"]
+
+    subject = request.form['subject']
+    duration = request.form['duration']
+    total = request.form['total']
+    easy = request.form['easy_count']
+    medium = request.form['medium_count']
+    hard = request.form['hard_count']
+
+    easy_file = request.files['easy']
+    medium_file = request.files['medium']
+    hard_file = request.files['hard']
+
+    easy_filename = os.path.join(app.config['UPLOAD_FOLDER'], easy_file.filename)
+    medium_filename = os.path.join(app.config['UPLOAD_FOLDER'], medium_file.filename)
+    hard_filename = os.path.join(app.config['UPLOAD_FOLDER'], hard_file.filename)
+
+    easy_file.save(easy_filename)
+    medium_file.save(medium_filename)
+    hard_file.save(hard_filename)
+
+    sql = """
+    INSERT INTO assessments
+    (
+        subject,
+        duration,
+        total,
+        easy,
+        medium,
+        hard,
+        easy_file,
+        medium_file,
+        hard_file,
+        teacher_id
+    )
+    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+    """
+
+    values = (
+        subject,
+        duration,
+        total,
+        easy,
+        medium,
+        hard,
+        easy_file.filename,
+        medium_file.filename,
+        hard_file.filename,
+        teacher_id
+    )
+
+    cursor.execute(sql, values)
+    db.commit()
+
+    flash("Assessment Created Successfully")
+    return redirect("/teacher/dashboard")
+
+
+#===============================================
+#teacher dashboard
+#===============================================
+
+@app.route("/teacher/dashboard")
+def teacher_dashboard():
+
+    if "teacher" not in session:
+        return redirect("/teacher/login")
+
+    teacher_id = session["teacher"]
+
+    # Teacher info
+    cursor.execute("""
+        SELECT t.id, t.name, t.email, s.subject_name
+        FROM teachers t
+        LEFT JOIN subjects s ON t.subject_id = s.id
+        WHERE t.id=%s
+    """, (teacher_id,))
+
+    teacher = cursor.fetchone()
+
+    if not teacher:
+        return redirect("/teacher/login")
+
+    # Total assessments created by this teacher
+    cursor.execute("""
+        SELECT COUNT(*) AS count
+        FROM assessments
+        WHERE teacher_id=%s and status='active'
+    """, (teacher_id,))
+    total_assessments = cursor.fetchone()["count"]
+
+    # Total students
+    cursor.execute("""
+        SELECT COUNT(*) AS count
+        FROM studentss
+    """)
+    total_students = cursor.fetchone()["count"]
+
+    # Pending attempts
+    cursor.execute("""
+        SELECT COUNT(*) AS count
+        FROM exam_attempts
+        WHERE status='in_progress'
+    """)
+    pending = cursor.fetchone()["count"]
+
+    # Activities
+    activities = []
+
+    return render_template(
+        "teacher_dashboard.html",
+        teacher=teacher,
+        total_assessments=total_assessments,
+        total_students=total_students,
+        pending=pending,
+        activities=activities
+    )
+#===============================================
+
+@app.route("/teacher/create")
+def teacher_create_page():
+
+    if "teacher" not in session:
+        return redirect("/teacher/login")
+
+    teacher_id = session["teacher"]
+
+    cursor.execute("""
+        SELECT
+            t.id,
+            t.name,
+            t.email,
+            s.subject_name
+        FROM teachers t
+        LEFT JOIN subjects s
+        ON t.subject_id = s.id
+        WHERE t.id=%s
+    """, (teacher_id,))
+
+    teacher = cursor.fetchone()
+
+    return render_template(
+        "teacher_create_assessment.html",
+        teacher=teacher
+    )
+#===================================================
+@app.route("/teacher/assessments")
+def teacher_assessments():
+    if "teacher" not in session:
+        return jsonify({"error": "unauthorized"})
+
+    teacher_id = session["teacher"]
+
+    cursor.execute("""
+        SELECT *
+        FROM assessments
+        WHERE teacher_id = %s AND status = 'active'
+        ORDER BY id DESC
+    """, (teacher_id,))
+
+    return jsonify(cursor.fetchall())
+#==================================================
+
+@app.route("/teacher/delete/<int:id>", methods=["DELETE"])
+def teacher_delete_assessment(id):
+
+    if "teacher" not in session:
+        return jsonify({"error": "unauthorized"})
+
+    teacher_id = session["teacher"]
+
+    cursor.execute("""
+        UPDATE assessments
+        SET status='deleted'
+        WHERE id=%s AND teacher_id=%s
+    """, (id, teacher_id))
+
+    db.commit()
+
+    return jsonify({"message": "deleted"})
+#===============================================
+
+@app.route("/teacher/assessments_page")
+def teacher_assessments_page():
+    if "teacher" not in session:
+        return redirect("/teacher/login")
+
+    return render_template("teacher_assessments.html")
+
+
+#=========================================================
+#delete subject
+#=========================================================
+@app.route("/admin/delete_subject/<int:id>", methods=["DELETE"])
+def delete_subject(id):
+
+    if "admin" not in session:
+        return jsonify({"message": "Unauthorized"})
+
+    cursor.execute("DELETE FROM subjects WHERE id=%s", (id,))
+    db.commit()
+
+    return jsonify({"message": "Subject deleted successfully"})
+#=========================================================
+#edit subject
+#=========================================================
+@app.route("/admin/update_subject", methods=["POST"])
+def update_subject():
+
+    if "admin" not in session:
+        return jsonify({"message": "Unauthorized"})
+
+    subject_id = request.form["id"]
+    name = request.form["name"]
+    total_marks = request.form["total_marks"]
+    max_assessments = request.form["max_assessments"]
+
+    cursor.execute("""
+        UPDATE subjects
+        SET subject_name=%s,
+            total_marks=%s,
+            max_assessments=%s
+        WHERE id=%s
+    """, (name, total_marks, max_assessments, subject_id))
+
+    db.commit()
+
+    return jsonify({"message": "Subject updated successfully"})
+#=========================================================
+
+
+# =========================================================
+# RUN APP
+# =========================================================
+if __name__ == "__main__":
+    app.run(debug=True)
