@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teacher Create Assessment</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='admin.css') }}">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+
+<div class="dashboard">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+
+        <div class="logo">
+            <img src="{{ url_for('static', filename='img2.png') }}">
+            <h3>Teacher Panel</h3>
+        </div>
+
+        <ul>
+
+            <li>
+                <a href="{{ url_for('teacher_dashboard') }}"
+                   style="color:white;text-decoration:none;">
+                    <i class="fas fa-home"></i>
+                    Dashboard
+                </a>
+            </li>
+
+            <li class="active">
+                <i class="fas fa-plus"></i>
+                Create Assessment
+            </li>
+
+        </ul>
+
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- TOPBAR -->
+        <div class="topbar">
+            <h2>Create Assessment</h2>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="content">
+
+            <div class="card">
+
+                <h3>Create New Assessment</h3>
+                <p>Upload question files and configure assessment details.</p>
+
+                <form action="/teacher/create_assessment"
+                      method="POST"
+                      enctype="multipart/form-data">
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+                            <label>Subject</label>
+                            <input type="text"
+                                   name="subject"
+                                   value="{{ teacher.subject_name }}"
+                                   readonly
+
+                                   >
+                        </div>
+
+                        <div class="form-group">
+                            <label>Duration (Minutes)</label>
+                            <input type="number"
+                                   name="duration"
+                                   required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Total Marks</label>
+                            <input type="number"
+                                   name="total"
+                                   required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Easy Questions</label>
+                            <input type="number"
+                                   name="easy_count"
+                                   required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Medium Questions</label>
+                            <input type="number"
+                                   name="medium_count"
+                                   required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Hard Questions</label>
+                            <input type="number"
+                                   name="hard_count"
+                                   required>
+                        </div>
+
+                    </div>
+
+                    <br>
+
+                    <div class="form-group">
+                        <label>Easy JSON File</label>
+                        <input type="file" name="easy" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Medium JSON File</label>
+                        <input type="file" name="medium" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Hard JSON File</label>
+                        <input type="file" name="hard" required>
+                    </div>
+
+                    <button type="submit">
+                        Create Assessment
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
